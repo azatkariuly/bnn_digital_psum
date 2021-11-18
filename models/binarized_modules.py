@@ -90,7 +90,7 @@ class BinarizeConv2d(nn.Conv2d):
                                         padding=padding, dilation=dilation, groups=groups, bias=bias)
 
         self.nbits_OA = kwargs['nbits_OA']
-        self.T = kwargs['T']
+        #self.T = kwargs['T']
 
 
     def forward(self, input):
