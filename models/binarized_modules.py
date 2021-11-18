@@ -80,7 +80,7 @@ class BinarizeConv2d(nn.Conv2d):
 
         #out = satconv2D(input, self.weight, self.padding, self.stride, b=self.nbits_OA, signed=True)
 
-        #out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
+        out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
 
         if not self.bias is None:
             self.bias.org=self.bias.data.clone()
@@ -90,6 +90,7 @@ class BinarizeConv2d(nn.Conv2d):
 
 def OA(x, b=4):
     mask = (1 << b) - 1
+    mask2 = 2**(b-1)
 
     Qn = -2**(b-1)
     Qp = 2**(b-1)-1
@@ -99,6 +100,13 @@ def OA(x, b=4):
     middle = 1.0 - upper - lower
 
     out = x*middle
-    out += (x*(upper+lower)).int()&mask
 
-    return out
+    out2 = (x*(upper+lower)).int()&mask
+
+    upper2 = (out2 > Qp).float()
+    lower2 = (out2 < Qn).float()
+    middle2 = 1.0 - upper2 - lower2
+
+    out3 = out2*middle2 + (out2-2*mask2)*upper2 + (out2+2*mask2)*lower2
+
+    return out+out3
