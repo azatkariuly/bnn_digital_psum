@@ -29,7 +29,7 @@ class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, do_bntan=True,
-                 nbits_OA=8, T=64, nbits_psum=nbits_psum):
+                 nbits_OA=8, T=64, nbits_psum=8):
         super(BasicBlock, self).__init__()
 
         self.conv1 = Binaryconv3x3(inplanes, planes, stride, nbits_OA=nbits_OA,
