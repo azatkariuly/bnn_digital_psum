@@ -72,15 +72,11 @@ class BinarizeConv2d(nn.Conv2d):
             self.weight.org=self.weight.data.clone()
         self.weight.data=Binarize(self.weight.org)
 
-        out = nn.functional.conv2d(input, self.weight, None, self.stride,
-                                   self.padding, self.dilation, self.groups)
+        #out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
 
-        #print(out.max(), out.min())
-        #out = out.int().float()
+        out = satconv2D(input, self.weight, self.padding, self.stride, b=self.nbits_OA, signed=True)
 
-        #out = satconv2D(input, self.weight, self.padding, self.stride, b=self.nbits_OA, signed=True)
-
-        out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
+        #out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
 
         if not self.bias is None:
             self.bias.org=self.bias.data.clone()
