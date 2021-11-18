@@ -54,8 +54,8 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     #    #psum, s = psum //2 , 1
     #    psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
     #    return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()*(2**s)
-    return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze().transpose(1,2)
-    #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()
+    #return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze().transpose(1,2)
+    return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze().transpose(1,2)
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     #B,Cin,H,W
