@@ -64,6 +64,7 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
 def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
+    print(psum.max(), psum.min())
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
         return OA(torch.sum(psum, axis=-1), b=b)*s
@@ -143,7 +144,7 @@ class BinarizeConv2d(nn.Conv2d):
         self.nbits_psum = kwargs['nbits_psum']    #psum bit size
 
         #psum step sizes
-        self.step_size_psum = Parameter(torch.ones(1)*3.5)
+        self.step_size_psum = Parameter(torch.ones(1)*3.0)
 
         #buffer is not updated for optim.step
         self.register_buffer('init_state', torch.zeros(1))
