@@ -70,7 +70,7 @@ class ResNet(nn.Module):
             )
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
+        layers.append(block(self.inplanes, planes, stride, downsample, T=T, nbits=nbits, nbits_SA=nbits_SA, nbits_psum=nbits_psum))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes, T=T, nbits=nbits, nbits_SA=nbits_SA, nbits_psum=nbits_psum))
