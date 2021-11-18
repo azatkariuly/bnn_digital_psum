@@ -1,5 +1,5 @@
 import argparse
-import os, sys
+import os
 import time
 import logging
 import torch
@@ -74,6 +74,8 @@ parser.add_argument('-e', '--evaluate', type=str, metavar='FILE',
                     help='evaluate model FILE on validation set')
 parser.add_argument('-prt', '--pretrained', type=str, metavar='FILE',
                     help='pretrained model FILE')
+parser.add_argument('-ab', '--abits', default=3, type=int,
+                    help='bitwidth for activations')
 parser.add_argument('-wb', '--wbits', default=1, type=int,
                     help='bitwidth for weights')
 parser.add_argument('-sa', '--SAbits', default=8, type=int,
@@ -115,8 +117,8 @@ def main():
     # create model
     logging.info("creating model %s", args.model)
     model = models.__dict__[args.model]
-    model_config = {'input_size': args.input_size, 'dataset': args.dataset,
-                    'nbits': args.wbits, 'nbits_SA': args.SAbits, 'nbits_psum': args.nbits_psum, 'T': args.t, 'nbits_OA': args.OAbits}
+    model_config = {'input_size': args.input_size, 'dataset': args.dataset, 'ab': args.abits,
+                    'wb': args.wbits, 'sab': args.SAbits, 'nbits_psum': args.nbits_psum, 'T': args.t, 'nbits_OA': args.OAbits}
 
     if args.model_config is not '':
         model_config = dict(model_config, **literal_eval(args.model_config))
@@ -203,8 +205,8 @@ def main():
         batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True)
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
-    #optimizer = torch.optim.Adam(model.parameters(), betas=(0.9, 0.999), lr=args.lr)
+    #optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), betas=(0.9, 0.999), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs, eta_min=0, last_epoch=args.start_epoch-1)
 
     #logging.info('training regime: %s', regime)
@@ -228,7 +230,7 @@ def main():
 
 
         #if is_best:
-        #    torch.save(model.state_dict(), '~/results/model_best_org.pth.tar')
+        #    torch.save(model.state_dict(), '~/results/model_best.pth.tar')
 
         save_checkpoint({
             'epoch': epoch + 1,
@@ -238,6 +240,7 @@ def main():
             'best_prec1': best_prec1
             #'regime': regime
         }, is_best, path=save_path)
+
         logging.info('\n Epoch: {0}\t'
                      'Training Loss {train_loss:.4f} \t'
                      'Training Prec@1 {train_prec1:.3f} \t'
@@ -356,7 +359,6 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         #                     batch_time=batch_time,
         #                     data_time=data_time, loss=losses, top1=top1, top5=top5))
     bar.finish()
-
     return losses.avg, top1.avg, top5.avg
 
 
