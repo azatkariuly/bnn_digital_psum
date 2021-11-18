@@ -54,7 +54,6 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     #    #psum, s = psum //2 , 1
     #    psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
     #    return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()*(2**s)
-    return re
     return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
@@ -150,10 +149,10 @@ class Conv2dLSQ(nn.Conv2d):
         x_q, s_a = quantizeLSQ(x, self.step_size_a, self.nbits, x.shape[1], isActivation=True)
         w_q, s_w = quantizeLSQ(self.weight, self.step_size_w, self.nbits, self.weight.data.numel())
 
-        OA = F.conv2d(x_q, w_q, self.bias, self.stride, self.padding, self.dilation, self.groups)*s_a*s_w
-        #SA = satconv2D(x_q, w_q, self.padding, self.stride, T=self.T, b=self.nbits_SA, signed=True, nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)*s_a*s_w
+        #OA = F.conv2d(x_q, w_q, self.bias, self.stride, self.padding, self.dilation, self.groups)*s_a*s_w
+        SA = satconv2D(x_q, w_q, self.padding, self.stride, T=self.T, b=self.nbits_SA, signed=True, nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)*s_a*s_w
 
-        return OA
+        return SA
 
 def OA(x, b=4):
     mask = (1 << b) - 1
