@@ -159,6 +159,7 @@ class BinarizeConv2d(nn.Conv2d):
         self.weight.data=Binarize(self.weight.org)
 
         if self.init_state == 0:
+            print('Doeasdgadsg1')
             init_psum = satconv2D(input, self.weight, self.padding, self.stride,
                                   T=self.T, b=self.nbits_OA, signed=True,
                                   nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum, for_ss=True)
