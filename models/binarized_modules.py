@@ -5,6 +5,7 @@ import math
 from torch.autograd import Variable
 from torch.autograd import Function
 import torch.nn.functional as F
+from torch.nn.parameter import Parameter
 from functools import reduce
 
 import numpy as np
