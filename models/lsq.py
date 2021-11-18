@@ -54,8 +54,8 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     #    #psum, s = psum //2 , 1
     #    psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
     #    return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()*(2**s)
-    #return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze().transpose(1,2)
-    return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze().transpose(1,2)
+    return re
+    return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     #B,Cin,H,W
@@ -67,8 +67,7 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True, nbits_
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b,
-                 signed=signed, nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
+    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed, nbits_psum=nbits_psum, step_size_psum=step_size_psum).transpose(1, 2).reshape(B,Cout,OH,OW)
 
 #def satlinear(input, weight, b=8, signed=True) -> Tensor:
 #    return satmm(input, weight.T, b, signed)
@@ -112,10 +111,10 @@ def quantizeLSQ_psum(v, s, p, numl, isActivation=False):
     Qn = -2**(p-1)
     Qp = 2**(p-1) - 1
 
-    gradScaleFactor = 1.0 / math.sqrt(v.numel())
+    gradScaleFactor = 1.0 / math.sqrt(numl*Qp)
     s = round_pass(grad_scale(s, gradScaleFactor))
 
-    vbar = round_pass((v/s).clamp(Qn, Qp))
+    vbar = round_pass((v/(2**s)).clamp(Qn, Qp))
     #vhat = vbar * s
 
     return vbar, s
@@ -151,10 +150,10 @@ class Conv2dLSQ(nn.Conv2d):
         x_q, s_a = quantizeLSQ(x, self.step_size_a, self.nbits, x.shape[1], isActivation=True)
         w_q, s_w = quantizeLSQ(self.weight, self.step_size_w, self.nbits, self.weight.data.numel())
 
-        #OA = F.conv2d(x_q, w_q, self.bias, self.stride, self.padding, self.dilation, self.groups)*s_a*s_w
-        out = satconv2D(x_q, w_q, self.padding, self.stride, T=self.T, b=self.nbits_SA, signed=True, nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
+        OA = F.conv2d(x_q, w_q, self.bias, self.stride, self.padding, self.dilation, self.groups)*s_a*s_w
+        #SA = satconv2D(x_q, w_q, self.padding, self.stride, T=self.T, b=self.nbits_SA, signed=True, nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)*s_a*s_w
 
-        return out*s_a*s_w
+        return OA
 
 def OA(x, b=4):
     mask = (1 << b) - 1
