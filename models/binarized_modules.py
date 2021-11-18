@@ -36,7 +36,7 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     psum = torch.sum(mult_reshaping, axis=0)
 
     if step_size_psum is not None:
-        print('quantization', nbits_psum)
+        print('quantization', psum.shape)
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
         return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()*s
 
