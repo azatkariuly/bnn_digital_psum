@@ -1,7 +1,6 @@
-2021-11-15 21:29:07 - INFO - saving to ./results/garbage
-2021-11-15 21:29:07 - DEBUG - run arguments: Namespace(OAbits=7, SAbits=8, batch_size=256, dataset='cifar10', epochs=90, evaluate='results/resnet20_binary/model_best.pth.tar', gpus='0', input_size=None, lr=0.01, model='resnet20_binary', model_config='', momentum=0.9, nbits_psum=8, optimizer='SGD', pretrained=None, print_freq=50, results_dir='./results', resume='', save='garbage', start_epoch=0, t=64, type='torch.cuda.FloatTensor', wbits=1, weight_decay=2.5e-05, workers=8)
-2021-11-15 21:29:08 - INFO - creating model resnet20_binary
-2021-11-15 21:29:08 - INFO - created model with configuration: {'input_size': None, 'dataset': 'cifar10', 'nbits': 1, 'nbits_SA': 8, 'nbits_psum': 8, 'T': 64, 'nbits_OA': 7}
-2021-11-15 21:29:13 - INFO - loaded checkpoint 'results/resnet20_binary/model_best.pth.tar' (epoch 478)
-2021-11-15 21:29:13 - INFO - number of parameters: 6759470
-2021-11-15 21:29:15 - INFO - EVALUATING - Epoch: [0][0/40]	Time 1.060 (1.060)	Data 0.645 (0.645)	Loss 11.6806 (11.6806)	Prec@1 7.812 (7.812)	Prec@5 46.875 (46.875)
+2021-11-18 14:16:28 - INFO - saving to ./results/garbage
+2021-11-18 14:16:28 - DEBUG - run arguments: Namespace(OAbits=8, SAbits=8, batch_size=256, dataset='cifar10', epochs=90, evaluate='results/vgg_small_binary/model_best.pth.tar', gpus='0', input_size=None, lr=0.01, model='vgg_small_binary', model_config='', momentum=0.9, nbits_psum=8, optimizer='SGD', pretrained=None, print_freq=50, results_dir='./results', resume='', save='garbage', start_epoch=0, t=64, type='torch.cuda.FloatTensor', wbits=1, weight_decay=2.5e-05, workers=8)
+2021-11-18 14:16:28 - INFO - creating model vgg_small_binary
+2021-11-18 14:16:28 - INFO - created model with configuration: {'input_size': None, 'dataset': 'cifar10', 'nbits': 1, 'nbits_SA': 8, 'nbits_psum': 8, 'T': 64, 'nbits_OA': 8}
+2021-11-18 14:16:32 - INFO - loaded checkpoint 'results/vgg_small_binary/model_best.pth.tar' (epoch 494)
+2021-11-18 14:16:32 - INFO - number of parameters: 27085440
