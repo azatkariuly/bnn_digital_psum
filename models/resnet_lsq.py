@@ -126,4 +126,4 @@ def resnet20_lsq(**kwargs):
     depth = depth or 20 #56
     return ResNet_cifar10(num_classes=num_classes, block=BasicBlock, depth=depth,
                           T=kwargs['T'], nbits=kwargs['nbits'],
-                          nbits_SA=kwargs['nbits_SA'], nbits_psum=kwargs['nbits_psum'])
+                          nbits_SA=kwargs['nbits_OA'], nbits_psum=kwargs['nbits_psum'])
