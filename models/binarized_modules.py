@@ -55,7 +55,7 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     # B N K T
     #print(torch.max(torch.abs(satmm_cuda.forward_psum(A.contiguous(),X.contiguous(),T).permute(3,1,0,2) - psum)))
     if step_size_psum is not None:
-        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
+        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         return (OA(torch.sum(psum, axis=0), b=b)*s).transpose(1,2)
 
     #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()
@@ -64,9 +64,9 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
 def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
-    print(psum.max(), psum.min())
+    #print(psum.max(), psum.min())
     if step_size_psum is not None:
-        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
+        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         return OA(torch.sum(psum, axis=-1), b=b)*s
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
@@ -101,11 +101,11 @@ def round_pass(x):
     y = yOut.detach() - yGrad.detach() + yGrad
     return y
 
-def quantizeLSQ_psum(v, s, p, numl):
+def quantizeLSQ_psum(v, s, p):
     Qn = -2**(p-1)
     Qp = 2**(p-1) - 1
 
-    gradScaleFactor = 1.0 / math.sqrt(numl*Qp)
+    gradScaleFactor = 1.0 / math.sqrt(v.numel()*Qp)
     s = round_pass(grad_scale(s, gradScaleFactor))
 
     vbar = round_pass((v/s).clamp(Qn, Qp))
