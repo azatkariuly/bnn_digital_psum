@@ -62,15 +62,17 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()
     return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()
 
-def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
+def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None, for_ss=False):
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
+    if for_ss:
+        return psum
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
         return OA(torch.sum(psum, axis=-1), b=b)*s
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
-              nbits_psum=8, step_size_psum=None):
+              nbits_psum=8, step_size_psum=None, for_ss=False):
     #B,Cin,H,W
     #Cout, Cin, H,W
     #B,Cout,H,W
@@ -81,18 +83,7 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
     return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
-                 nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
-
-def init_ss(image, kernel, padding=0, stride=1, T=64):
-    B,Cin,H,W=image.shape
-    Cout,_,CH,CW = kernel.shape
-    OH = (H - CH + 2 * padding[0]) // stride[0] + 1
-    OW = (W - CW + 2 * padding[1]) // stride[0] + 1
-    inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-
-    satmm_cuda_psum = satmm_psum.apply
-    psum = satmm_cuda_psum(inp_unf.transpose(1, 2).contiguous(), kernel.view(Cout, -1).t().contiguous(),T).reshape(B,Cout,OH,OW)
-    return psum.sum(axis=-1)
+                 nbits_psum=nbits_psum, step_size_psum=step_size_psum, for_ss=for_ss).reshape(B,Cout,OH,OW)
 
 def Binarize(tensor,quant_mode='det'):
     if quant_mode=='det':
@@ -168,7 +159,9 @@ class BinarizeConv2d(nn.Conv2d):
         self.weight.data=Binarize(self.weight.org)
 
         if self.init_state == 0:
-            init_psum = init_ss(input, self.weight, self.padding, self.stride, T=self.T)
+            init_psum = satconv2D(input, self.weight, self.padding, self.stride,
+                                  T=self.T, b=self.nbits_OA, signed=True,
+                                  nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum, for_ss=True)
             self.step_size_psum.data.copy_(2 * init_psum.abs().mean() / math.sqrt(2 ** (self.nbits - 1) - 1))
 
             self.init_state.fill_(1)
