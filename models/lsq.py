@@ -111,7 +111,7 @@ class Conv2dLSQ(nn.Conv2d):
         self.step_size_a = Parameter(torch.Tensor(1))
 
         #psum step sizes
-        self.step_size_psum = Parameter(torch.ones(1)*3.0)
+        self.step_size_psum = Parameter(torch.ones(1)*2.0)
 
         #buffer is not updated for optim.step
         self.register_buffer('init_state', torch.zeros(1))
