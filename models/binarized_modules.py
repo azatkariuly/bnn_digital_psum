@@ -162,12 +162,10 @@ class BinarizeConv2d(nn.Conv2d):
         self.weight.data=Binarize(self.weight.org)
 
         if self.init_state == 0:
-            print('Doeasdgadsg1')
             init_psum = satconv2D(input, self.weight, self.padding, self.stride,
                                   T=self.T, b=self.nbits_OA, signed=True,
                                   nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum, for_ss=True)
-            self.step_size_psum.data.copy_(2 * init_psum.abs().mean() / math.sqrt(2 ** (self.nbits - 1) - 1))
-            print('Doeasdgadsg')
+            self.step_size_psum.data.copy_(2 * init_psum.abs().mean() / math.sqrt(2 ** (self.nbits_psum - 1) - 1))
 
             self.init_state.fill_(1)
         #out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
