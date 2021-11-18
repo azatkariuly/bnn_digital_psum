@@ -25,8 +25,14 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     mult_reshaping = F.pad(input=mult, pad=(0, 0, 0, 0, 0, 0, 0, rem), mode='constant', value=0).reshape(T, psum_num, N, -1, K)
 
     psum = torch.sum(mult_reshaping, axis=0)
+
+    if step_size_psum is not None:
+        print('nbits_psum', nbits_psum)
+        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
+        return (OA(torch.sum(psum, axis=0), b=b)*s).transpose(1,2)
     # B N K T
     #print(torch.max(torch.abs(satmm_cuda.forward_psum(A.contiguous(),X.contiguous(),T).permute(3,1,0,2) - psum)))
+    print('WTF')
     return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze().transpose(1,2)
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
@@ -78,11 +84,11 @@ def quantizeLSQ(v, s, p, numl, isActivation=False):
 
     return vbar, s
 
-def quantizeLSQ_psum(v, s, p, numl, isActivation=False):
+def quantizeLSQ_psum(v, s, p):
     Qn = -2**(p-1)
     Qp = 2**(p-1) - 1
 
-    gradScaleFactor = 1.0 / math.sqrt(numl*Qp)
+    gradScaleFactor = 1.0 / math.sqrt(v.numel()*Qp)
     s = round_pass(grad_scale(s, gradScaleFactor))
 
     vbar = round_pass((v/(2**s)).clamp(Qn, Qp))
@@ -121,8 +127,8 @@ class Conv2dLSQ(nn.Conv2d):
         x_q, s_a = quantizeLSQ(x, self.step_size_a, self.nbits, x.shape[1], isActivation=True)
         w_q, s_w = quantizeLSQ(self.weight, self.step_size_w, self.nbits, self.weight.data.numel())
 
-        out = F.conv2d(x_q, w_q, self.bias, self.stride, self.padding, self.dilation, self.groups)
-        #out = satconv2D(x_q, w_q, self.padding, self.stride, T=self.T, b=self.nbits_SA, signed=True, nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
+        #out = F.conv2d(x_q, w_q, self.bias, self.stride, self.padding, self.dilation, self.groups)
+        out = satconv2D(x_q, w_q, self.padding, self.stride, T=self.T, b=self.nbits_SA, signed=True, nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
 
         return out*s_a*s_w
 
