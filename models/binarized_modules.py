@@ -21,7 +21,6 @@ class satmm_psum(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        print(grad_output)
         grad_output = grad_output.sum(axis=-1) / grad_output.shape[-1]
         A, X = ctx.saved_tensors
         grad_input = torch.matmul(grad_output, X.T)
@@ -62,17 +61,15 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()
     return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()
 
-def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None, for_ss=False):
+def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
-    if for_ss:
-        return psum
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
         return OA(torch.sum(psum, axis=-1), b=b)*s
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
-              nbits_psum=8, step_size_psum=None, for_ss=False):
+              nbits_psum=8, step_size_psum=None):
     #B,Cin,H,W
     #Cout, Cin, H,W
     #B,Cout,H,W
@@ -82,11 +79,8 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-    if for_ss:
-        return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
-                               nbits_psum=nbits_psum, step_size_psum=step_size_psum, for_ss=for_ss)
     return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
-                           nbits_psum=nbits_psum, step_size_psum=step_size_psum, for_ss=for_ss).reshape(B,Cout,OH,OW)
+                           nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
 
 def Binarize(tensor,quant_mode='det'):
     if quant_mode=='det':
@@ -149,7 +143,7 @@ class BinarizeConv2d(nn.Conv2d):
         self.nbits_psum = kwargs['nbits_psum']    #psum bit size
 
         #psum step sizes
-        self.step_size_psum = Parameter(torch.ones(1)*2.0)
+        self.step_size_psum = Parameter(torch.ones(1)*4.0)
 
         #buffer is not updated for optim.step
         self.register_buffer('init_state', torch.zeros(1))
@@ -161,13 +155,6 @@ class BinarizeConv2d(nn.Conv2d):
             self.weight.org=self.weight.data.clone()
         self.weight.data=Binarize(self.weight.org)
 
-        if self.init_state == 0:
-            init_psum = satconv2D(input, self.weight, self.padding, self.stride,
-                                  T=self.T, b=self.nbits_OA, signed=True,
-                                  nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum, for_ss=True)
-            self.step_size_psum.data.copy_(2 * init_psum.abs().mean() / math.sqrt(2 ** (self.nbits_psum - 1) - 1))
-
-            self.init_state.fill_(1)
         #out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
 
         out = satconv2D(input, self.weight, self.padding, self.stride,
