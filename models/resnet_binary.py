@@ -74,7 +74,7 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
 
     def _make_layer(self, block, planes, blocks, stride=1, do_bntan=True,
-                    nbits_OA=8, T=64, , nbits_psum=8):
+                    nbits_OA=8, T=64, nbits_psum=8):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
