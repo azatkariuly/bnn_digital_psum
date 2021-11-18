@@ -20,7 +20,6 @@ class satmm_psum(torch.autograd.Function):
         return out
     @staticmethod
     def backward(ctx, grad_output):
-        print('J')
         grad_output = grad_output.sum(axis=-1)
         A, X = ctx.saved_tensors
         grad_input = torch.matmul(grad_output, X.T)
