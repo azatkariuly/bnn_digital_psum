@@ -9,30 +9,6 @@ import math
 import numpy as np
 from functools import reduce
 
-class satmm_psum(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, A, X, t):
-        ctx.t = t
-        out = satmm_cuda.forward_psum(A, X, t)
-        ctx.save_for_backward(A, X)
-        return out
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        grad_output = grad_output.sum(axis=-1) / grad_output.shape[-1]
-        A, X = ctx.saved_tensors
-        grad_input = torch.matmul(grad_output, X.T)
-        grad_weight = torch.matmul(A.transpose(1,2), grad_output)
-        return grad_input, grad_weight, None
-
-def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
-    satmm_cuda_psum = satmm_psum.apply
-    psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
-
-    #print(psum.max(), psum.min())
-    if step_size_psum is not None:
-        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
-        return OA(torch.sum(psum, axis=-1), b=b)*s
 
 def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     width=2**b # 256
@@ -45,18 +21,16 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
 
     rem = T - M%T
     psum_num = (M+rem)//T
+
     mult_reshaping = F.pad(input=mult, pad=(0, 0, 0, 0, 0, 0, 0, rem), mode='constant', value=0).reshape(T, psum_num, N, -1, K)
 
     psum = torch.sum(mult_reshaping, axis=0)
+    # B N K T
+    #print(torch.max(torch.abs(satmm_cuda.forward_psum(A.contiguous(),X.contiguous(),T).permute(3,1,0,2) - psum)))
+    return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze().transpose(1,2)
 
-    #if step_size_psum is not None:
-    #    #print(step_size_psum, nbits_psum, psum.shape[1])
-    #    #psum, s = psum //2 , 1
-    #    psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
-    #    return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()*(2**s)
-    return reduce(lambda x,y: (x+y), psum).transpose(0,-2).squeeze().transpose(1,2)
-
-def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
+def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
+              nbits_psum=8, step_size_psum=None):
     #B,Cin,H,W
     #Cout, Cin, H,W
     #B,Cout,H,W
@@ -66,7 +40,8 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True, nbits_
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed, nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
+    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
+                           nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
 
 def grad_scale(x, scale):
     yOut = x
