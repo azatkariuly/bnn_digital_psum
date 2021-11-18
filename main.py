@@ -117,8 +117,8 @@ def main():
     # create model
     logging.info("creating model %s", args.model)
     model = models.__dict__[args.model]
-    model_config = {'input_size': args.input_size, 'dataset': args.dataset, 'ab': args.abits,
-                    'wb': args.wbits, 'sab': args.SAbits, 'nbits_psum': args.nbits_psum, 'T': args.t, 'nbits_OA': args.OAbits}
+    model_config = {'input_size': args.input_size, 'dataset': args.dataset,
+                    'nbits': args.wbits, 'sab': args.SAbits, 'nbits_psum': args.nbits_psum, 'T': args.t, 'nbits_OA': args.OAbits}
 
     if args.model_config is not '':
         model_config = dict(model_config, **literal_eval(args.model_config))
