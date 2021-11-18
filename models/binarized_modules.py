@@ -80,7 +80,7 @@ class BinarizeConv2d(nn.Conv2d):
 
         #out = satconv2D(input, self.weight, self.padding, self.stride, b=self.nbits_OA, signed=True)
 
-        out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
+        #out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
 
         if not self.bias is None:
             self.bias.org=self.bias.data.clone()
@@ -102,4 +102,3 @@ def OA(x, b=4):
     out += (x*(upper+lower)).int()&mask
 
     return out
-
