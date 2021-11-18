@@ -121,10 +121,10 @@ class Conv2dLSQ(nn.Conv2d):
         x_q, s_a = quantizeLSQ(x, self.step_size_a, self.nbits, x.shape[1], isActivation=True)
         w_q, s_w = quantizeLSQ(self.weight, self.step_size_w, self.nbits, self.weight.data.numel())
 
-        out = F.conv2d(x_q, w_q, self.bias, self.stride, self.padding, self.dilation, self.groups)
+        out = F.conv2d(x_q, w_q, self.bias, self.stride, self.padding, self.dilation, self.groups)*s_a*s_w
         #out = satconv2D(x_q, w_q, self.padding, self.stride, T=self.T, b=self.nbits_SA, signed=True, nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
 
-        return out*s_a*s_w
+        return out
 
 def OA(x, b=4):
     mask = (1 << b) - 1
