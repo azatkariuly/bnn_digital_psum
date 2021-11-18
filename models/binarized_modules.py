@@ -27,6 +27,15 @@ class satmm_psum(torch.autograd.Function):
         grad_weight = torch.matmul(A.transpose(1,2), grad_output)
         return grad_input, grad_weight, None
 
+def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
+    satmm_cuda_psum = satmm_psum.apply
+    psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
+
+    #print(psum.max(), psum.min())
+    if step_size_psum is not None:
+        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
+        return OA(torch.sum(psum, axis=-1), b=b)*s
+
 '''
 def satmm(A, X, b=8, signed=True):
     width=2**b # 256
@@ -56,19 +65,10 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     #print(torch.max(torch.abs(satmm_cuda.forward_psum(A.contiguous(),X.contiguous(),T).permute(3,1,0,2) - psum)))
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
-        return (OA(torch.sum(psum, axis=0), b=b)*s).transpose(1,2)
+        return (OA(torch.sum(psum, axis=0), b=b)*s)
 
     #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()
-    return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()
-
-def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
-    satmm_cuda_psum = satmm_psum.apply
-    psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
-
-    #print(psum.max(), psum.min())
-    if step_size_psum is not None:
-        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
-        return OA(torch.sum(psum, axis=-1), b=b)*s
+    #return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
               nbits_psum=8, step_size_psum=None):
@@ -81,8 +81,8 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-    return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
-                           nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
+    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
+                           nbits_psum=nbits_psum, step_size_psum=step_size_psum).transpose(1,2).reshape(B,Cout,OH,OW)
 
 def get_psum(image, kernel, padding=0, stride=1, T=64):
     B,Cin,H,W=image.shape
@@ -170,12 +170,13 @@ class BinarizeConv2d(nn.Conv2d):
             self.weight.org=self.weight.data.clone()
         self.weight.data=Binarize(self.weight.org)
 
+        '''
         if self.init_state == 0:
             out = get_psum(input, self.weight, self.padding, self.stride, T=self.T)
             self.step_size_psum.data.copy_(2 * out.abs().mean() / math.sqrt(2 ** (self.nbits_psum - 1) - 1))
             print(self.step_size_psum)
             self.init_state.fill_(1)
-
+        '''
         #out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
 
         out = satconv2D(input, self.weight, self.padding, self.stride,
