@@ -66,6 +66,7 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True, nbits_
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
+    print('SA size', b)
     return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed, nbits_psum=nbits_psum, step_size_psum=step_size_psum).transpose(1, 2).reshape(B,Cout,OH,OW)
 
 #def satlinear(input, weight, b=8, signed=True) -> Tensor:
