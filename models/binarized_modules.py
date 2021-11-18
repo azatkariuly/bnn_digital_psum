@@ -69,7 +69,7 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
         return (OA(torch.sum(psum, axis=0), b=b)*s)
     '''
     #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()
-    return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()
+    return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze().transpose(1,2)
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
               nbits_psum=8, step_size_psum=None):
@@ -83,7 +83,7 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
     return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
-                           nbits_psum=nbits_psum, step_size_psum=step_size_psum).transpose(1,2).reshape(B,Cout,OH,OW)
+                           nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
 
 def get_psum(image, kernel, padding=0, stride=1, T=64):
     B,Cin,H,W=image.shape
