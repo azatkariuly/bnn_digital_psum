@@ -20,7 +20,7 @@ class satmm_psum(torch.autograd.Function):
         return out
     @staticmethod
     def backward(ctx, grad_output):
-        grad_output = grad_output.sum(axis=-1) / grad_output.shape[-1]
+        grad_output = grad_output.sum(axis=-1) #/ grad_output.shape[-1]
         A, X = ctx.saved_tensors
         grad_input = torch.matmul(grad_output, X.T)
         grad_weight = torch.matmul(A.transpose(1,2), grad_output)
@@ -79,7 +79,7 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
+    return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
                  nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
 
 def Binarize(tensor,quant_mode='det'):
