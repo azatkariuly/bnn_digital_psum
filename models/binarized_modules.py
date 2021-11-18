@@ -52,10 +52,10 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
 
     psum = torch.sum(mult_reshaping, axis=0)
     # B N K T
-    print(torch.max(torch.abs(satmm_cuda.forward_psum(A.contiguous(),X.contiguous(),T).permute(3,1,0,2) - psum)))
+    #print(torch.max(torch.abs(satmm_cuda.forward_psum(A.contiguous(),X.contiguous(),T).permute(3,1,0,2) - psum)))
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
-        return OA(torch.sum(psum, axis=-1), b=b)*s
+        return (OA(torch.sum(psum, axis=0), b=b)*s).transpose(1,2)
 
     #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()
     return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()
@@ -79,7 +79,7 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-    return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
+    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
                  nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
 
 def Binarize(tensor,quant_mode='det'):
