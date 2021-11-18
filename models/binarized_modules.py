@@ -46,7 +46,7 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()
 
 def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
-    psum = satmm_cuda.forward_psum(A,X,T)
+    psum = satmm_cuda.forward_psum(A.contiguous(),X.contiguous(),T)
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
         return OA(torch.sum(psum, axis=-1), b=b)*s
