@@ -11,6 +11,21 @@ from functools import reduce
 
 import numpy as np
 
+class satmm_psum(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, A, X, t):
+        ctx.t = t
+        out, mask = satmm_cuda.forward_psum(A, X, t)
+        ctx.save_for_backward(A, X)
+        return out
+    @staticmethod
+    def backward(ctx, grad_output):
+        grad_output = grad_output.sum(axis=-1)
+        A, X = ctx.saved_tensors
+        grad_input = torch.matmul(grad_output, X.T)
+        grad_weight = torch.matmul(A.transpose(1,2), grad_output)
+        return grad_input, grad_weight, None
+
 '''
 def satmm(A, X, b=8, signed=True):
     width=2**b # 256
@@ -46,7 +61,8 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()
 
 def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
-    psum = satmm_cuda.forward_psum(A.contiguous(),X.contiguous(),T)
+    satmm_cuda_psum = satmm_psum.apply
+    psum = satmm_cuda_psum(A.contiguous(),X.contiguous(),T)
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
         return OA(torch.sum(psum, axis=-1), b=b)*s
