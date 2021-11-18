@@ -82,8 +82,11 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
+    if for_ss:
+        return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
+                               nbits_psum=nbits_psum, step_size_psum=step_size_psum, for_ss=for_ss)
     return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
-                 nbits_psum=nbits_psum, step_size_psum=step_size_psum, for_ss=for_ss).reshape(B,Cout,OH,OW)
+                           nbits_psum=nbits_psum, step_size_psum=step_size_psum, for_ss=for_ss).reshape(B,Cout,OH,OW)
 
 def Binarize(tensor,quant_mode='det'):
     if quant_mode=='det':
