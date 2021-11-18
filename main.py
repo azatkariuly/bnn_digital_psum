@@ -1,5 +1,5 @@
 import argparse
-import os
+import os, sys
 import time
 import logging
 import torch
@@ -60,7 +60,7 @@ parser.add_argument('-b', '--batch-size', default=256, type=int,
                     metavar='N', help='mini-batch size (default: 256)')
 parser.add_argument('--optimizer', default='SGD', type=str, metavar='OPT',
                     help='optimizer function used')
-parser.add_argument('--lr', '--learning_rate', default=0.01, type=float,
+parser.add_argument('--lr', '--learning_rate', default=5e-3, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
