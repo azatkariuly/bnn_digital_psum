@@ -20,7 +20,7 @@ class satmm_psum(torch.autograd.Function):
         return out
     @staticmethod
     def backward(ctx, grad_output):
-        grad_output = grad_output.sum(axis=-1)
+        grad_output = grad_output.sum(axis=-1) / grad_output.shape[-1]
         A, X = ctx.saved_tensors
         grad_input = torch.matmul(grad_output, X.T)
         grad_weight = torch.matmul(A.transpose(1,2), grad_output)
