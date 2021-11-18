@@ -15,7 +15,7 @@ class satmm_psum(torch.autograd.Function):
     @staticmethod
     def forward(ctx, A, X, t):
         ctx.t = t
-        out, mask = satmm_cuda.forward_psum(A, X, t)
+        out = satmm_cuda.forward_psum(A, X, t)
         ctx.save_for_backward(A, X)
         return out
     @staticmethod
