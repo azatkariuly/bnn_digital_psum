@@ -138,10 +138,10 @@ def resnet18_binary(**kwargs):
     num_classes = 10
     depth = 18
     return ResNet_cifar10(num_classes=num_classes, block=BasicBlock, depth=depth,
-                          T=kwargs['T'], nbits_OA=kwargs['nbits_OA'])
+                          nbits_OA=kwargs['nbits_OA'])
 
 def resnet20_binary(**kwargs):
     num_classes = 10
     depth = 20
     return ResNet_cifar10(num_classes=num_classes, block=BasicBlock, depth=depth,
-                          T=kwargs['T'], nbits_OA=kwargs['nbits_OA'])
+                          nbits_OA=kwargs['nbits_OA'])
