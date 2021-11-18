@@ -34,16 +34,15 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
 
     psum = torch.sum(mult_reshaping, axis=0)
 
-    #if step_size_psum is not None:
-    #    #print(step_size_psum, nbits_psum, psum.shape[1])
-    #    #psum, s = psum //2 , 1
-    #    psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
-    #    return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()*(2**s)
+    if step_size_psum is not None:
+        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum, psum.shape[1])
+        return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()*s
 
     #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze()
     return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze()
 
-def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True):
+def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
+              nbits_psum=8, step_size_psum=None):
     #B,Cin,H,W
     #Cout, Cin, H,W
     #B,Cout,H,W
@@ -53,8 +52,8 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True):
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b,
-                 signed=signed).transpose(1, 2).reshape(B,Cout,OH,OW)
+    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
+                 nbits_psum=nbits_psum, step_size_psum=step_size_psum).transpose(1, 2).reshape(B,Cout,OH,OW)
 
 def Binarize(tensor,quant_mode='det'):
     if quant_mode=='det':
@@ -62,6 +61,29 @@ def Binarize(tensor,quant_mode='det'):
     else:
         return tensor.add_(1).div_(2).add_(torch.rand(tensor.size()).add(-0.5)).clamp_(0,1).round().mul_(2).add_(-1)
 
+def grad_scale(x, scale):
+    yOut = x
+    yGrad = x*scale
+    y = yOut.detach() - yGrad.detach() + yGrad
+    return y
+
+def round_pass(x):
+    yOut = x.round()
+    yGrad = x
+    y = yOut.detach() - yGrad.detach() + yGrad
+    return y
+
+def quantizeLSQ_psum(v, s, p, numl):
+    Qn = -2**(p-1)
+    Qp = 2**(p-1) - 1
+
+    gradScaleFactor = 1.0 / math.sqrt(numl*Qp)
+    s = round_pass(grad_scale(s, gradScaleFactor))
+
+    vbar = round_pass((v/s).clamp(Qn, Qp))
+    #vhat = vbar * s
+
+    return vbar, s
 
 class BinarizeLinear(nn.Linear):
 
@@ -91,7 +113,10 @@ class BinarizeConv2d(nn.Conv2d):
 
         self.nbits_OA = kwargs['nbits_OA']
         self.T = kwargs['T']
+        self.nbits_psum = kwargs['nbits_psum']    #psum bit size
 
+        #psum step sizes
+        self.step_size_psum = Parameter(torch.ones(1)*2.0)
 
     def forward(self, input):
         if input.size(1) != 3:
@@ -103,7 +128,8 @@ class BinarizeConv2d(nn.Conv2d):
         #out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
 
         out = satconv2D(input, self.weight, self.padding, self.stride,
-                        T=self.T, b=self.nbits_OA, signed=True)
+                        T=self.T, b=self.nbits_OA, signed=True,
+                        nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
 
         #out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
 
