@@ -11,7 +11,6 @@ from functools import reduce
 
 import numpy as np
 
-'''
 class satmm_psum(torch.autograd.Function):
     @staticmethod
     def forward(ctx, A, X, t):
@@ -32,12 +31,13 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
 
+    return OA(torch.sum(psum, axis=-1), b=b)
+
     #print(psum.max(), psum.min())
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         return OA(torch.sum(psum, axis=-1), b=b)*s
 
-'''
 '''
 def satmm(A, X, b=8, signed=True):
     width=2**b # 256
@@ -83,7 +83,7 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
+    return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
                            nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
 
 '''
@@ -161,13 +161,13 @@ class BinarizeConv2d(nn.Conv2d):
             print(self.step_size_psum)
             self.init_state.fill_(1)
         '''
-        out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
+        #out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
 
-        #out = satconv2D(input, self.weight, self.padding, self.stride,
-        #                T=self.T, b=self.nbits_OA, signed=True,
-        #                nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
+        out = satconv2D(input, self.weight, self.padding, self.stride,
+                        T=self.T, b=self.nbits_OA, signed=True,
+                        nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
 
-        out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
+        #out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
 
         if not self.bias is None:
             self.bias.org=self.bias.data.clone()
