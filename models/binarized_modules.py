@@ -41,7 +41,7 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
         return OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*s
 
     '''
-    out1 = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(1,-1)
+    out1 = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
     out = torch.sum(psum, axis=3).squeeze().transpose(1,-1)
     print(out.shape, out1.shape)
     return
