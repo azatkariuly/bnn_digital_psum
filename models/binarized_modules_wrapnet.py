@@ -94,7 +94,7 @@ def quantizeLSQ_psum(v, s, p):
 class BinarizeConv2d(nn.Conv2d):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True, **kwargs):
+                 padding=0, dilation=1, groups=1, bias=True, downsample=False, **kwargs):
         super(BinarizeConv2d, self).__init__(in_channels, out_channels, kernel_size, stride=stride,
                                         padding=padding, dilation=dilation, groups=groups, bias=bias)
 
@@ -102,6 +102,7 @@ class BinarizeConv2d(nn.Conv2d):
         self.T = kwargs['T']
         self.nbits_psum = kwargs['nbits_psum']    #psum bit size
         self.k = kwargs['k']
+        self.downsample = downsample
 
         #psum step sizes
         self.step_size_psum = Parameter(torch.ones(1)*3.0)
@@ -132,50 +133,9 @@ class BinarizeConv2d(nn.Conv2d):
         #WrapNet cyclic activation
         out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
 
+        if self.downsample:
+            return out
         return out, r
-
-class BinarizeConv2d_Downsample(nn.Conv2d):
-
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True, **kwargs):
-        super(BinarizeConv2d_Downsample, self).__init__(in_channels, out_channels, kernel_size, stride=stride,
-                                        padding=padding, dilation=dilation, groups=groups, bias=bias)
-
-        self.nbits_OA = kwargs['nbits_OA']
-        self.T = kwargs['T']
-        self.nbits_psum = kwargs['nbits_psum']    #psum bit size
-        self.k = kwargs['k']
-
-        #psum step sizes
-        self.step_size_psum = Parameter(torch.ones(1)*3.0)
-
-        #buffer is not updated for optim.step
-        self.register_buffer('init_state', torch.zeros(1))
-
-    def forward(self, input):
-        if input.size(1) != 3:
-            input.data = Binarize(input.data)
-        if not hasattr(self.weight,'org'):
-            self.weight.org=self.weight.data.clone()
-        self.weight.data=Binarize(self.weight.org)
-
-        out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
-
-        #out = satconv2D(input, self.weight, self.padding, self.stride,
-        #                T=self.T, b=self.nbits_OA, signed=True,
-        #                nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
-
-        out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
-
-        if not self.bias is None:
-            self.bias.org=self.bias.data.clone()
-            out += self.bias.view(1, -1, 1, 1).expand_as(out)
-
-        r = regularizer(out, b=self.nbits_OA)
-        #WrapNet cyclic activation
-        out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
-
-        return out
 
 def OA(x, b=4):
     mask = (1 << b) - 1
