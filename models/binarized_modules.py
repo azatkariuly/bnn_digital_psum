@@ -69,7 +69,7 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     # B N K T
 
     if step_size_psum is not None:
-        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
+        psum, s = psum, 1 #quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         return (OA(torch.sum(psum, axis=0), b=b)*s).transpose(0,-2).squeeze().transpose(1,2)
 
     #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze().transpose(1,2)
