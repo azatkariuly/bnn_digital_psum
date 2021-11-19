@@ -142,7 +142,7 @@ def quantizeLSQ_psum(v, s, p):
 class BinarizeConv2d(nn.Conv2d):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True, downsmpl=False, **kwargs):
+                 padding=0, dilation=1, groups=1, bias=True, **kwargs):
         super(BinarizeConv2d, self).__init__(in_channels, out_channels, kernel_size, stride=stride,
                                         padding=padding, dilation=dilation, groups=groups, bias=bias)
 
@@ -150,7 +150,6 @@ class BinarizeConv2d(nn.Conv2d):
         self.T = kwargs['T']
         self.nbits_psum = kwargs['nbits_psum']    #psum bit size
         self.k = kwargs['k']
-        self.downsmpl = downsmpl
 
         #psum step sizes
         self.step_size_psum = Parameter(torch.ones(1)*3.0)
@@ -189,9 +188,7 @@ class BinarizeConv2d(nn.Conv2d):
         #WrapNet cyclic activation
         out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
 
-        if self.downsmpl:
-            return out
-        return out, r
+        return out
 
 def OA(x, b=4):
     mask = (1 << b) - 1
