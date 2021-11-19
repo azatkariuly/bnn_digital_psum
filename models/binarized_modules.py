@@ -11,6 +11,7 @@ from functools import reduce
 
 import numpy as np
 
+'''
 class satmm_psum(torch.autograd.Function):
     @staticmethod
     def forward(ctx, A, X, t):
@@ -37,6 +38,7 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
         return OA(torch.sum(psum, axis=-1), b=b)*s
 
 '''
+'''
 def satmm(A, X, b=8, signed=True):
     width=2**b # 256
     max = (width >> signed) - 1 #127 or 255
@@ -62,7 +64,6 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
 
     psum = torch.sum(mult_reshaping, axis=0)
     # B N K T
-    #print(torch.max(torch.abs(satmm_cuda.forward_psum(A.contiguous(),X.contiguous(),T).permute(3,1,0,2) - psum)))
 
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
@@ -85,6 +86,7 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
                            nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
 
+'''
 def get_psum(image, kernel, padding=0, stride=1, T=64):
     B,Cin,H,W=image.shape
     Cout,_,CH,CW = kernel.shape
@@ -96,7 +98,7 @@ def get_psum(image, kernel, padding=0, stride=1, T=64):
     with torch.no_grad():
         psum = satmm_cuda_psum(inp_unf.transpose(1, 2).contiguous(), kernel.view(Cout, -1).t().contiguous(), T)
     return psum
-
+'''
 
 def Binarize(tensor,quant_mode='det'):
     if quant_mode=='det':
@@ -127,25 +129,6 @@ def quantizeLSQ_psum(v, s, p):
     #vhat = vbar * s
 
     return vbar, s
-
-class BinarizeLinear(nn.Linear):
-
-    def __init__(self, *kargs, **kwargs):
-        super(BinarizeLinear, self).__init__(*kargs, **kwargs)
-
-    def forward(self, input):
-
-        if input.size(1) != 784:
-            input.data=Binarize(input.data)
-        if not hasattr(self.weight,'org'):
-            self.weight.org=self.weight.data.clone()
-        self.weight.data=Binarize(self.weight.org)
-        out = nn.functional.linear(input, self.weight)
-        if not self.bias is None:
-            self.bias.org=self.bias.data.clone()
-            out += self.bias.view(1, -1).expand_as(out)
-
-        return out
 
 class BinarizeConv2d(nn.Conv2d):
 
@@ -180,11 +163,11 @@ class BinarizeConv2d(nn.Conv2d):
         '''
         #out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
 
-        out = satconv2D(input, self.weight, self.padding, self.stride,
-                        T=self.T, b=self.nbits_OA, signed=True,
-                        nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
+        #out = satconv2D(input, self.weight, self.padding, self.stride,
+        #                T=self.T, b=self.nbits_OA, signed=True,
+        #                nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
 
-        #out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
+        out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
 
         if not self.bias is None:
             self.bias.org=self.bias.data.clone()
