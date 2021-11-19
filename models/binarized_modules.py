@@ -225,4 +225,4 @@ def cyclic_activation(z, k, b):
     return (k*(2**(b-1))-k*m)*upper + (-k*(2**(b-1))-k*m)*lower + m*middle
 
 def regularizer(out, b):
-    return torch.max(out.abs()-2**(b-1), torch.Tensor([0])).sum()
+    return torch.max(out.abs()-2**(b-1), torch.Tensor([0])).sum().cuda()
