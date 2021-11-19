@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torchvision.transforms as transforms
 import math
-from .binarized_modules_wrapnet import BinarizeConv2d, BinarizeConv2d_Downsample
+from .binarized_modules_wrapnet import BinarizeConv2d
 
 __all__ = ['resnet18_binary_wrapnet', 'resnet20_binary_wrapnet']
 
@@ -74,8 +74,8 @@ class ResNet(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                BinarizeConv2d_Downsample(self.inplanes, planes * block.expansion,
-                               kernel_size=1, stride=stride, bias=False,
+                BinarizeConv2d(self.inplanes, planes * block.expansion,
+                               kernel_size=1, stride=stride, bias=False, downsample=True,
                                nbits_OA=nbits_OA, T=T, nbits_psum=nbits_psum, k=k),
                 nn.BatchNorm2d(planes * block.expansion),
             )
