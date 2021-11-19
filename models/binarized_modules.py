@@ -30,6 +30,7 @@ class satmm_psum(torch.autograd.Function):
 def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
+    print(psum.shape)
 
     return OA(torch.sum(psum, axis=-1), b=b)
 
