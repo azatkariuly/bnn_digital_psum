@@ -83,9 +83,11 @@ parser.add_argument('-sa', '--SAbits', default=8, type=int,
 parser.add_argument('-oa', '--OAbits', default=8, type=int,
                     help='bitwidth for OA')
 parser.add_argument('-t', '--t', default=64, type=int,
-                    help='size of Tile')
+                    help='size of Tile (default: 64)')
 parser.add_argument('-psum', '--nbits_psum', default=8, type=int,
                     help='bitwidth for psums')
+parser.add_argument('-k', '--k', default=2, type=int,
+                    help='WrapNet slope (default: 2)')
 
 def main():
     global args, best_prec1
@@ -118,7 +120,8 @@ def main():
     logging.info("creating model %s", args.model)
     model = models.__dict__[args.model]
     model_config = {'input_size': args.input_size, 'dataset': args.dataset,
-                    'nbits': args.wbits, 'sab': args.SAbits, 'nbits_psum': args.nbits_psum, 'T': args.t, 'nbits_OA': args.OAbits}
+                    'nbits': args.wbits, 'sab': args.SAbits, 'nbits_psum': args.nbits_psum,
+                    'T': args.t, 'nbits_OA': args.OAbits, 'k': args.k}
 
     if args.model_config is not '':
         model_config = dict(model_config, **literal_eval(args.model_config))

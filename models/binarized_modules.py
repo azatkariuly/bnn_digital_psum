@@ -35,14 +35,16 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
 
+    '''
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)*s
         #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*s
         return out
+    '''
 
-    out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
-    #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
+    #out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
+    out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
     return out
 
 '''
@@ -53,7 +55,6 @@ def satmm(A, X, b=8, signed=True):
     N, M = A.shape[-2], A.shape[-1]
     _, K = X.shape
     return reduce(lambda x,y : (x+y).clip(min,max) ,torch.multiply(X.flatten(), A.reshape(-1,N,M,1).expand(-1,-1,-1,K).reshape(-1,N,M*K)).reshape(-1,N,M,K).transpose(-2,0)).transpose(0,-2).squeeze()
-'''
 
 def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     width=2**b # 256
@@ -80,6 +81,7 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
 
     #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze().transpose(1,2)
     return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze().transpose(1,2)
+'''
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
               nbits_psum=8, step_size_psum=None):
@@ -147,6 +149,7 @@ class BinarizeConv2d(nn.Conv2d):
         self.nbits_OA = kwargs['nbits_OA']
         self.T = kwargs['T']
         self.nbits_psum = kwargs['nbits_psum']    #psum bit size
+        self.k = kwargs['k']
 
         #psum step sizes
         self.step_size_psum = Parameter(torch.ones(1)*3.0)
@@ -181,6 +184,9 @@ class BinarizeConv2d(nn.Conv2d):
             self.bias.org=self.bias.data.clone()
             out += self.bias.view(1, -1, 1, 1).expand_as(out)
 
+        #WrapNet cyclic activation
+        out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
+
         return out
 
 def OA(x, b=4):
@@ -205,3 +211,14 @@ def OA(x, b=4):
     out3 = out2*middle2 + (out2-2*mask2)*upper2 + (out2+2*mask2)*lower2
 
     return out+out3
+
+def cyclic_activation(z, k, b):
+    m = (z+2**(b-1)).remainder(2**b) - 2**(b-1)
+
+    Q = k*(2**(b-1))/(k+1)
+
+    upper = (m > Q).float()
+    lower = (m < -Q).float()
+    middle = 1.0 - upper - lower
+
+    return (k*(2**(b-1))-k*m)*upper + (-k*(2**(b-1))-k*m)*lower + m*middle
