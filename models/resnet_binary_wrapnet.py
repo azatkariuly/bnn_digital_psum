@@ -43,17 +43,14 @@ class BasicBlock(nn.Module):
     def forward(self, x):
         residual = x[0].clone()
         reg = x[1]
-        print('Layer start =', reg)
 
         out, r = self.conv1(x[0])
         reg += r
-        print('first r =', r, ' total =', reg)
         out = self.bn1(out)
         out = self.tanh1(out)
 
         out, r = self.conv2(out)
         reg += r
-        print('second r =', r, ' total =', reg)
 
         if self.downsample is not None:
             if residual.data.max()>1:
