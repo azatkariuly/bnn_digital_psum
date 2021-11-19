@@ -33,7 +33,7 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
 
     #print(psum.max(), psum.min())
     if step_size_psum is not None:
-        psum, s = psum, 1 #quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
+        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         return OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*s
 
     out = torch.sum(psum, axis=3).squeeze().transpose(1,-1)
@@ -155,13 +155,12 @@ class BinarizeConv2d(nn.Conv2d):
             self.weight.org=self.weight.data.clone()
         self.weight.data=Binarize(self.weight.org)
 
-        '''
+
         if self.init_state == 0:
             out = get_psum(input, self.weight, self.padding, self.stride, T=self.T)
             self.step_size_psum.data.copy_(2 * out.abs().mean() / math.sqrt(2 ** (self.nbits_psum - 1) - 1))
             print(self.step_size_psum)
             self.init_state.fill_(1)
-        '''
 
         #out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
 
