@@ -104,7 +104,6 @@ class ResNet(nn.Module):
         x = self.layer4(x)
 
         x[0] = self.avgpool(x[0])
-        print(x)
         x[0] = x[0].view(x[0].size(0), -1)
         x[0] = self.bn2(x[0])
         x[0] = self.tanh2(x[0])
