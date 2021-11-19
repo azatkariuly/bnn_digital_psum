@@ -47,14 +47,17 @@ class BasicBlock(nn.Module):
         self.stride = stride
 
     def forward(self, x):
+        r=0
 
         residual = x.clone()
 
-        out = self.conv1(x)
+        out, r1 = self.conv1(x)
+        r += r1
         out = self.bn1(out)
         out = self.tanh1(out)
 
-        out = self.conv2(out)
+        out, r1 = self.conv2(out)
+        r += r1
 
 
         if self.downsample is not None:
@@ -67,7 +70,7 @@ class BasicBlock(nn.Module):
             out = self.bn2(out)
             out = self.tanh2(out)
 
-        return out
+        return out, r
 
 class ResNet(nn.Module):
 
@@ -80,7 +83,7 @@ class ResNet(nn.Module):
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
                 BinarizeConv2d(self.inplanes, planes * block.expansion,
-                               kernel_size=1, stride=stride, bias=False,
+                               kernel_size=1, stride=stride, bias=False, downsmpl=True,
                                nbits_OA=nbits_OA, T=T, nbits_psum=nbits_psum, k=k),
                 nn.BatchNorm2d(planes * block.expansion),
             )
