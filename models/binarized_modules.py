@@ -65,7 +65,7 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
 
     psum = torch.sum(mult_reshaping, axis=0)
     #print('a', psum.shape)
-    return torch.sum(psum, axis=0).transpose(1,2)
+    return torch.sum(psum, axis=0).transpose(0,-2).squeeze()..transpose(1,2)
     # B N K T
 
     if step_size_psum is not None:
