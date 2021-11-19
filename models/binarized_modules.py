@@ -31,13 +31,14 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
 
-    out = torch.sum(psum, axis=3).squeeze().transpose(1,-1)
-    return OA(out, b=b)
-
     #print(psum.max(), psum.min())
     if step_size_psum is not None:
+        print('Quantization')
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         return OA(torch.sum(psum, axis=-1), b=b)*s
+
+    out = torch.sum(psum, axis=3).squeeze().transpose(1,-1)
+    return OA(out, b=b)
 
 '''
 def satmm(A, X, b=8, signed=True):
