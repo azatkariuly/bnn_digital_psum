@@ -30,9 +30,8 @@ class satmm_psum(torch.autograd.Function):
 def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
-    print(psum.shape)
 
-    return OA(torch.sum(psum, axis=-1), b=b)
+    return OA(torch.sum(psum, axis=-1), b=b).transpose(0,-2).squeeze()
 
     #print(psum.max(), psum.min())
     if step_size_psum is not None:
@@ -65,12 +64,12 @@ def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
 
     psum = torch.sum(mult_reshaping, axis=0)
     #print('a', psum.shape)
-    return torch.sum(psum, axis=0).transpose(0,-2).squeeze().transpose(1,2)
+    return torch.sum(psum, axis=0).transpose(1,2)
     # B N K T
 
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
-        return (OA(torch.sum(psum, axis=0), b=b)*s).transpose(1,2)
+        return (OA(torch.sum(psum, axis=0), b=b)*s).transpose(0,-2).squeeze().transpose(1,2)
 
     #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze().transpose(1,2)
     return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze().transpose(1,2)
@@ -86,7 +85,7 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-    return satmm(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
+    return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
                            nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
 
 '''
