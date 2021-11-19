@@ -143,7 +143,7 @@ class BinarizeConv2d(nn.Conv2d):
         self.nbits_psum = kwargs['nbits_psum']    #psum bit size
 
         #psum step sizes
-        self.step_size_psum = Parameter(torch.ones(1)*4.0)
+        self.step_size_psum = Parameter(torch.ones(1)*3.0)
 
         #buffer is not updated for optim.step
         self.register_buffer('init_state', torch.zeros(1))
