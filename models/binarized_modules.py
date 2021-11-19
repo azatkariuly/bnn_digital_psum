@@ -45,6 +45,7 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
 
     #out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
     out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
+    print('just oa')
     return out
 
 '''
@@ -185,6 +186,7 @@ class BinarizeConv2d(nn.Conv2d):
             out += self.bias.view(1, -1, 1, 1).expand_as(out)
 
         #WrapNet cyclic activation
+        print('doing wrapnet activation')
         out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
 
         return out
