@@ -138,7 +138,7 @@ class BinarizeConv2d_Downsample(nn.Conv2d):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
                  padding=0, dilation=1, groups=1, bias=True, **kwargs):
-        super(BinarizeConv2d, self).__init__(in_channels, out_channels, kernel_size, stride=stride,
+        super(BinarizeConv2d_Downsample, self).__init__(in_channels, out_channels, kernel_size, stride=stride,
                                         padding=padding, dilation=dilation, groups=groups, bias=bias)
 
         self.nbits_OA = kwargs['nbits_OA']
