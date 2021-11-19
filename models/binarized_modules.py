@@ -156,7 +156,7 @@ class BinarizeConv2d(nn.Conv2d):
         self.weight.data=Binarize(self.weight.org)
 
 
-        if self.init_state == 0 and self.nbits_psum != 12:
+        if self.init_state == 0 and self.nbits_psum == 5:
             out = get_psum(input, self.weight, self.padding, self.stride, T=self.T)
             self.step_size_psum.data.copy_(2 * out.abs().mean() / math.sqrt(2 ** (self.nbits_psum - 1) - 1))
             print(self.step_size_psum)
