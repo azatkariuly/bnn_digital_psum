@@ -34,7 +34,6 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
     #print(psum.max(), psum.min())
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
-        print('OA', b, ' nbits_psum', nbits_psum)
         return OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*s
 
     out = torch.sum(psum, axis=3).squeeze().transpose(1,-1)
@@ -90,7 +89,6 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
                            nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
 
-'''
 def get_psum(image, kernel, padding=0, stride=1, T=64):
     B,Cin,H,W=image.shape
     Cout,_,CH,CW = kernel.shape
@@ -102,7 +100,6 @@ def get_psum(image, kernel, padding=0, stride=1, T=64):
     with torch.no_grad():
         psum = satmm_cuda_psum(inp_unf.transpose(1, 2).contiguous(), kernel.view(Cout, -1).t().contiguous(), T)
     return psum
-'''
 
 def Binarize(tensor,quant_mode='det'):
     if quant_mode=='det':
@@ -158,13 +155,12 @@ class BinarizeConv2d(nn.Conv2d):
             self.weight.org=self.weight.data.clone()
         self.weight.data=Binarize(self.weight.org)
 
-        '''
         if self.init_state == 0:
             out = get_psum(input, self.weight, self.padding, self.stride, T=self.T)
             self.step_size_psum.data.copy_(2 * out.abs().mean() / math.sqrt(2 ** (self.nbits_psum - 1) - 1))
             print(self.step_size_psum)
             self.init_state.fill_(1)
-        '''
+
         #out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
 
         out = satconv2D(input, self.weight, self.padding, self.stride,
