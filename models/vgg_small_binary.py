@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 from torch.autograd import Function
-from .binarized_modules import  BinarizeLinear,BinarizeConv2d
+from .binarized_modules import  BinarizeConv2d
 
 __all__ = [
     'vgg_small_binary'
@@ -100,4 +100,3 @@ class VGG_Cifar10(nn.Module):
 def vgg_small_binary(**kwargs):
     num_classes = kwargs.get( 'num_classes', 10)
     return VGG_Cifar10(num_classes, nbits_OA=kwargs['nbits_OA'])
-
