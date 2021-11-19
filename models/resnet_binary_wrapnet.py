@@ -94,20 +94,17 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        print('Forward Start!')
         x = [x, 0]
+
         x[0] = self.conv1(x[0])
         x[0] = self.maxpool(x[0])
         x[0] = self.bn1(x[0])
         x[0] = self.tanh1(x[0])
-        print('In front of the layers =', x[1])
-        #Do something!
+
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-
-        print('Exited from layers = ', x[1])
 
         x[0] = self.avgpool(x[0])
         x[0] = x[0].view(x[0].size(0), -1)
@@ -117,7 +114,6 @@ class ResNet(nn.Module):
         x[0] = self.bn3(x[0])
         x[0] = self.logsoftmax(x[0])
 
-        print('Final reg =', x[1])
         return x[0], x[1]
 
 class ResNet_cifar10(ResNet):

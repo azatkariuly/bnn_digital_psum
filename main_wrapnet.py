@@ -308,7 +308,6 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
             # compute output
             output, reg = model(input_var)
 
-        print('regularizer', reg)
         loss = criterion(output, target_var) + reg
         if type(output) is list:
             output = output[0]
