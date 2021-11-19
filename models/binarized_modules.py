@@ -28,14 +28,20 @@ class satmm_psum(torch.autograd.Function):
         return grad_input, grad_weight, None
 
 def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
+    width=2**b # 256
+    max = (width >> signed) - 1 #127 or 255
+    min = max - width + 1
+
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
 
-    #print(psum.max(), psum.min())
+    '''
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         return OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*s
 
+    '''
+    return reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).transpose(3,0).squeeze().transpose(1,-1)
     out = torch.sum(psum, axis=3).squeeze().transpose(1,-1)
     return OA(out, b=b)
 
