@@ -38,7 +38,7 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         #out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)*step_size_psum
-        out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*step_size_psum
+        out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*s
         return out
 
     out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
@@ -130,7 +130,7 @@ def quantizeLSQ_psum(v, s, p):
     Qp = 2**(p-1) - 1
 
     gradScaleFactor = 1.0 / math.sqrt(v.numel()*Qp)
-    #s = round_pass(grad_scale(s, gradScaleFactor))
+    s = round_pass(grad_scale(s, gradScaleFactor))
 
     vbar = round_pass((v/s).clamp(Qn, Qp))
     #vhat = vbar * s
@@ -147,10 +147,10 @@ class BinarizeConv2d(nn.Conv2d):
         self.nbits_OA = kwargs['nbits_OA']
         self.T = kwargs['T']
         self.nbits_psum = kwargs['nbits_psum']    #psum bit size
-        #self.k = kwargs['k']
+        self.k = kwargs['k']
 
         #psum step sizes
-        self.step_size_psum = kwargs['k'] #Parameter(torch.ones(1)*3.0)
+        self.step_size_psum = Parameter(torch.ones(1)*16.0)
 
         #buffer is not updated for optim.step
         self.register_buffer('init_state', torch.zeros(1))
