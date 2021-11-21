@@ -35,13 +35,11 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
 
-    '''
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)*s
         #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*s
         return out
-    '''
 
     #out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
     out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
@@ -132,7 +130,7 @@ def quantizeLSQ_psum(v, s, p):
     Qp = 2**(p-1) - 1
 
     gradScaleFactor = 1.0 / math.sqrt(v.numel()*Qp)
-    s = round_pass(grad_scale(s, gradScaleFactor))
+    #s = round_pass(grad_scale(s, gradScaleFactor))
 
     vbar = round_pass((v/s).clamp(Qn, Qp))
     #vhat = vbar * s
@@ -152,7 +150,7 @@ class BinarizeConv2d(nn.Conv2d):
         self.k = kwargs['k']
 
         #psum step sizes
-        self.step_size_psum = Parameter(torch.ones(1)*3.0)
+        self.step_size_psum = 2.0 #Parameter(torch.ones(1)*3.0)
 
         #buffer is not updated for optim.step
         self.register_buffer('init_state', torch.zeros(1))
@@ -184,9 +182,9 @@ class BinarizeConv2d(nn.Conv2d):
             self.bias.org=self.bias.data.clone()
             out += self.bias.view(1, -1, 1, 1).expand_as(out)
 
-        r = regularizer(out, b=self.nbits_OA)
         #WrapNet cyclic activation
-        out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
+        #r = regularizer(out, b=self.nbits_OA)
+        #out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
 
         return out
 
