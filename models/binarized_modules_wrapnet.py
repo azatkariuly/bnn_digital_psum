@@ -129,6 +129,7 @@ class BinarizeConv2d(nn.Conv2d):
             self.bias.org=self.bias.data.clone()
             out += self.bias.view(1, -1, 1, 1).expand_as(out)
 
+        out = constant_shift(out, b=self.nbits_OA)
         r = regularizer(out, b=self.nbits_OA)
         #WrapNet cyclic activation
         out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
@@ -160,9 +161,10 @@ def OA(x, b=4):
 
     return out+out3
 
-def cyclic_activation(z, k, b):
-    m = (z+2**(b-1)).remainder(2**b) - 2**(b-1)
+def constant_shift(z, b):
+    return (z+2**(b-1)).remainder(2**b) - 2**(b-1)
 
+def cyclic_activation(m, k, b):
     Q = k*(2**(b-1))/(k+1)
 
     upper = (m > Q).float()
