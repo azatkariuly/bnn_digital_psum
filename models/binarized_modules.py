@@ -42,8 +42,8 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
         print('quantiz', step_size_psum)
         return out
 
-    #out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
-    out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
+    out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
+    #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
     return out
 
 '''
@@ -151,7 +151,7 @@ class BinarizeConv2d(nn.Conv2d):
         self.k = kwargs['k']
 
         #psum step sizes
-        self.step_size_psum = 2.0 #Parameter(torch.ones(1)*3.0)
+        self.step_size_psum = 8.0 #Parameter(torch.ones(1)*3.0)
 
         #buffer is not updated for optim.step
         self.register_buffer('init_state', torch.zeros(1))
