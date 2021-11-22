@@ -37,9 +37,8 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
 
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
-        print(psum)
-        #out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)*step_size_psum
-        out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*step_size_psum
+        out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)*step_size_psum
+        #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*step_size_psum
         return out
 
     out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
