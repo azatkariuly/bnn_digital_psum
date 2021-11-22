@@ -121,7 +121,7 @@ class BinarizeConv2d(nn.Conv2d):
 
         #out = satconv2D(input, self.weight, self.padding, self.stride,
         #                T=self.T, b=self.nbits_OA, signed=True,
-        #                nbits_psum=self.nbits_psum, step_size_psum=self.step_size_psum)
+        #                nbits_psum=self.nbits_OA, step_size_psum=self.step_size_psum)
 
         #out = OA(out.int(), b=self.nbits_OA).float() + out - out.int()
 
@@ -129,10 +129,8 @@ class BinarizeConv2d(nn.Conv2d):
             self.bias.org=self.bias.data.clone()
             out += self.bias.view(1, -1, 1, 1).expand_as(out)
 
-
         r = regularizer(out, b=self.nbits_OA)
         #WrapNet cyclic activation
-        out = constant_shift(out, b=self.nbits_OA)
         out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
 
         if self.downsample:
@@ -162,10 +160,8 @@ def OA(x, b=4):
 
     return out+out3
 
-def constant_shift(z, b):
-    return (z+2**(b-1)).remainder(2**b) - 2**(b-1)
-
-def cyclic_activation(m, k, b):
+def cyclic_activation(z, k, b):
+    m = (z+2**(b-1)).remainder(2**b) - 2**(b-1) #shift
     Q = k*(2**(b-1))/(k+1)
 
     upper = (m > Q).float()
@@ -175,4 +171,5 @@ def cyclic_activation(m, k, b):
     return (k*(2**(b-1))-k*m)*upper + (-k*(2**(b-1))-k*m)*lower + m*middle
 
 def regularizer(out, b):
-    return torch.max(out.abs()-2**(b-1), torch.Tensor([0]).cuda()).sum()
+    m = torch.max(out.abs()-2**(b-1), torch.Tensor([0]).cuda()).sum()
+    return m/out.numel()
