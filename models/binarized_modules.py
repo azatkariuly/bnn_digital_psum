@@ -120,7 +120,7 @@ def grad_scale(x, scale):
     return y
 
 def round_pass(x):
-    yOut = x.round()
+    yOut = x.floor() #.round()
     yGrad = x
     y = yOut.detach() - yGrad.detach() + yGrad
     return y
