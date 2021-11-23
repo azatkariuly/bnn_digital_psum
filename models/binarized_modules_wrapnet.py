@@ -135,7 +135,7 @@ class BinarizeConv2d(nn.Conv2d):
 
         if self.downsample:
             return out
-        return out, None #r
+        return out, 0 #r
 
 def OA(x, b=4):
     mask = (1 << b) - 1
