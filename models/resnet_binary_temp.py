@@ -3,7 +3,7 @@ import torchvision.transforms as transforms
 import math
 from .binarized_modules_wrapnet import BinarizeConv2d
 
-__all__ = ['resnet18_binary_wrapnet', 'resnet20_binary_wrapnet']
+__all__ = ['resnet18_binary_wrapnet_temp', 'resnet20_binary_wrapnet_temp']
 
 def Binaryconv3x3(in_planes, out_planes, stride=1, nbits_OA=8, T=64, nbits_psum=8, k=2):
     "3x3 convolution with padding"
@@ -157,14 +157,14 @@ class ResNet_cifar10(ResNet):
         init_model(self)
 
 
-def resnet18_binary_wrapnet(**kwargs):
+def resnet18_binary_wrapnet_temp(**kwargs):
     num_classes = 10
     depth = 18
     return ResNet_cifar10(num_classes=num_classes, block=BasicBlock, depth=depth,
                           T=kwargs['T'], nbits_OA=kwargs['nbits_OA'], nbits_psum=kwargs['nbits_psum'],
                           k=kwargs['k'])
 
-def resnet20_binary_wrapnet(**kwargs):
+def resnet20_binary_wrapnet_temp(**kwargs):
     num_classes = 10
     depth = 20
     return ResNet_cifar10(num_classes=num_classes, block=BasicBlock, depth=depth,
