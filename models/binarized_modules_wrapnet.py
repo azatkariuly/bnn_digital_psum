@@ -102,7 +102,6 @@ class BinarizeConv2d(nn.Conv2d):
         self.T = kwargs['T']
         self.nbits_psum = kwargs['nbits_psum']    #psum bit size
         self.k = kwargs['k']
-        self.downsample = downsample
 
         #psum step sizes
         self.step_size_psum = Parameter(torch.ones(1)*3.0)
