@@ -38,8 +38,8 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         #out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)*step_size_psum
-        out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)*step_size_psum
-        #out = cyclic_activation(torch.sum(psum, axis=3).squeeze().transpose(1,-1), k=2, b=b)*step_size_psum
+        out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
+        out = cyclic_activation(out, k=2, b=b)*step_size_psum
         return out
 
     out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
@@ -192,8 +192,8 @@ class BinarizeConv2d(nn.Conv2d):
 def OA(x, b=4):
     return (x+2**(b-1)).remainder(2**b) - 2**(b-1)
 
-def cyclic_activation(z, k, b):
-    m = (z+2**(b-1)).remainder(2**b) - 2**(b-1) #OA
+def cyclic_activation(m, k, b):
+    #m = (z+2**(b-1)).remainder(2**b) - 2**(b-1) #OA
 
     Q = k*(2**(b-1))/(k+1)
 
