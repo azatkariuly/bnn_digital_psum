@@ -130,7 +130,7 @@ class BinarizeConv2d(nn.Conv2d):
 
         r = regularizer(out, b=self.nbits_OA)
         #WrapNet cyclic activation
-        #out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
+        out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
 
         return out, r
 
