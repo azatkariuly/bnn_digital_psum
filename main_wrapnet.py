@@ -145,25 +145,14 @@ def main():
                      args.pretrained, checkpoint['epoch'])
         #print(models_torch.vgg16())
         #return
-    if args.pretrained1:
-        if not os.path.isfile(args.pretrained1):
-            parser.error('invalid checkpoint: {}'.format(args.pretrained1))
-
-        checkpoint = torch.load(args.pretrained1)
-        load_my_state_dict(model, checkpoint['state_dict'])
-        #model.load_state_dict(checkpoint['state_dict'], strict=False)
-
-        logging.info("loaded checkpoint '%s' (epoch %s)",
-                     args.pretrained1, checkpoint['epoch'])
-        #print(models_torch.vgg16())
-        return
 
     # optionally resume from a checkpoint
     if args.evaluate:
         if not os.path.isfile(args.evaluate):
             parser.error('invalid checkpoint: {}'.format(args.evaluate))
         checkpoint = torch.load(args.evaluate)
-        model.load_state_dict(checkpoint['state_dict'], strict=False)
+        load_my_state_dict(model, checkpoint['state_dict'])
+        #model.load_state_dict(checkpoint['state_dict'], strict=False)
         logging.info("loaded checkpoint '%s' (epoch %s)",
                      args.evaluate, checkpoint['epoch'])
     elif args.resume:
@@ -398,17 +387,19 @@ def load_my_state_dict(self, state_dict):
         for name, param in state_dict.items():
 
             if name not in own_state:
-                print('Not is own_state =', name)
                 temp = name.split('.downsample.')
-                print('after splitting:', temp)
                 new_name = temp[0] + '.downsample.' + 's' + temp[1]
-                print('new name =', new_name)
+
+                if isinstance(param, Parameter):
+                    param = param.data
+
+                own_state[new_name].copy_(param)
                 continue
             if isinstance(param, Parameter):
                 # backwards compatibility for serialized parameters
                 param = param.data
             #print('is =', name)
-            #own_state[name].copy_(param)
+            own_state[name].copy_(param)
         '''
         for name in own_state:
             # if name not in state_dict:
