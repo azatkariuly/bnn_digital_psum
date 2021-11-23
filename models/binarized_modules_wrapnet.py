@@ -158,7 +158,7 @@ def OA(x, b=4):
     return out+out3
 
 def cyclic_activation(z, k, b):
-    m = (z+2**(b-1)).remainder(2**b) - 2**(b-1) #shift
+    m = (z+2**(b-1)).remainder(2**b) - 2**(b-1) #OA shift
     Q = k*(2**(b-1))/(k+1)
 
     upper = (m > Q).float()
