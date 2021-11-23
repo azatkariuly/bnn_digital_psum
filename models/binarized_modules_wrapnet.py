@@ -129,7 +129,7 @@ class BinarizeConv2d(nn.Conv2d):
             self.bias.org=self.bias.data.clone()
             out += self.bias.view(1, -1, 1, 1).expand_as(out)
 
-        #r = regularizer(out, b=self.nbits_OA)
+        r = regularizer(out, b=self.nbits_OA)
         #WrapNet cyclic activation
         #out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
 
