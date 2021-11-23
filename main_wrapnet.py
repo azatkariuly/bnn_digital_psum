@@ -74,6 +74,8 @@ parser.add_argument('-e', '--evaluate', type=str, metavar='FILE',
                     help='evaluate model FILE on validation set')
 parser.add_argument('-prt', '--pretrained', type=str, metavar='FILE',
                     help='pretrained model FILE')
+parser.add_argument('-prt1', '--pretrained1', type=str, metavar='FILE',
+                    help='pretrained model FILE')
 parser.add_argument('-ab', '--abits', default=3, type=int,
                     help='bitwidth for activations')
 parser.add_argument('-wb', '--wbits', default=1, type=int,
@@ -143,6 +145,18 @@ def main():
                      args.pretrained, checkpoint['epoch'])
         #print(models_torch.vgg16())
         #return
+    if args.pretrained1:
+        if not os.path.isfile(args.pretrained1):
+            parser.error('invalid checkpoint: {}'.format(args.pretrained1))
+
+        checkpoint = torch.load(args.pretrained1)
+        load_my_state_dict(model, checkpoint['state_dict'])
+        #model.load_state_dict(checkpoint['state_dict'], strict=False)
+
+        logging.info("loaded checkpoint '%s' (epoch %s)",
+                     args.pretrained1, checkpoint['epoch'])
+        #print(models_torch.vgg16())
+        return
 
     # optionally resume from a checkpoint
     if args.evaluate:
@@ -377,6 +391,27 @@ def validate(data_loader, model, criterion, epoch):
     model.eval()
     return forward(data_loader, model, criterion, epoch,
                    training=False, optimizer=None)
+
+def load_my_state_dict(self, state_dict):
+
+        own_state = self.state_dict()
+        for name, param in state_dict.items():
+
+            if name not in own_state:
+                print('Not is own_state =', name)
+                continue
+            if isinstance(param, Parameter):
+                # backwards compatibility for serialized parameters
+                param = param.data
+            print('is =', name)
+            #own_state[name].copy_(param)
+        '''
+        for name in own_state:
+            # if name not in state_dict:
+            if 'init_state' in name:
+                own_state[name].copy_(torch.zeros(1).cuda())
+                print(name)
+        '''
 
 
 if __name__ == '__main__':
