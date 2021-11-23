@@ -138,8 +138,8 @@ def main():
             parser.error('invalid checkpoint: {}'.format(args.pretrained))
 
         checkpoint = torch.load(args.pretrained)
-        #load_my_state_dict(model, checkpoint['state_dict'])
-        model.load_state_dict(checkpoint['state_dict'], strict=False)
+        load_my_state_dict(model, checkpoint['state_dict'])
+        #model.load_state_dict(checkpoint['state_dict'], strict=False)
 
         logging.info("loaded checkpoint '%s' (epoch %s)",
                      args.pretrained, checkpoint['epoch'])
