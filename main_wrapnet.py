@@ -399,8 +399,10 @@ def load_my_state_dict(self, state_dict):
 
             if name not in own_state:
                 print('Not is own_state =', name)
-                #temp = name.split('.downsample.')
-                #print('after splitting:', temp)
+                temp = name.split('.downsample.')
+                print('after splitting:', temp)
+                new_name = temp[0] + '.downsample.' + 's' + temp[1]
+                print('new name =', new_name)
                 continue
             if isinstance(param, Parameter):
                 # backwards compatibility for serialized parameters
