@@ -399,14 +399,14 @@ def load_my_state_dict(self, state_dict):
 
             if name not in own_state:
                 print('Not is own_state =', name)
+                temp = name.split('downsample')
+                print('after splitting:', temp)
                 continue
             if isinstance(param, Parameter):
                 # backwards compatibility for serialized parameters
                 param = param.data
-            print('is =', name)
+            #print('is =', name)
             #own_state[name].copy_(param)
-        for name in own_state:
-            print('baseline name:', name)
         '''
         for name in own_state:
             # if name not in state_dict:
