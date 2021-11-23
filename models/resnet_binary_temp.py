@@ -91,7 +91,7 @@ class ResNet(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = downsample_sequential(self.inplanes, planes*block.expansion,
-                                    kernel_size=1, strid=stride, bias=False, downsample=True,
+                                    kernel_size=1, stride=stride, bias=False, downsample=True,
                                     nbits_OA=nbits_OA, T=T, nbits_psum=nbits_psum, k=k)
 
         layers = []
