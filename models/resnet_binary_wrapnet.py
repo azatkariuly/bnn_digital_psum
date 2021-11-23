@@ -77,8 +77,8 @@ class downsample_sequential(nn.Module):
         self.s1 = nn.BatchNorm2d(planes)
 
     def forward(self, x):
-        x, r = self.s0(x[0])
-        x = self.s1(x[0])
+        x, r = self.s0(x)
+        x = self.s1(x)
 
         return x, r
 
