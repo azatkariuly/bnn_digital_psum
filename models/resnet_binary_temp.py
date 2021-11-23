@@ -20,6 +20,8 @@ def init_model(model):
             m.weight.data.fill_(1)
             m.bias.data.zero_()
 
+
+
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -64,6 +66,21 @@ class BasicBlock(nn.Module):
 
         return [out, reg]
 
+class downsample_sequential(nn.Module):
+    def __init__(self, inplanes, planes, kernel_size=1, stride=1, bias=False, downsample=True, nbits_OA=8, T=64, nbits_psum=8, k=2):
+        super(downsample_sequential, self).__init__()
+
+        self.0 = BinarizeConv2d(inplanes, planes, kernel_size=kernel_size,
+                                stride=stride, bias=bias, downsample=True, nbits_OA=nbits_OA,
+                                T=T, nbits_psum=nbits_psum, k=k)
+        self.1 = nn.BatchNorm2d(planes)
+
+    def forward(self, x):
+        x = self.0(x)
+        x = self.1(x)
+
+        return x
+
 class ResNet(nn.Module):
 
     def __init__(self):
@@ -73,12 +90,9 @@ class ResNet(nn.Module):
                     nbits_OA=8, T=64, nbits_psum=8, k=2):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
-            downsample = nn.Sequential(
-                BinarizeConv2d(self.inplanes, planes * block.expansion,
-                               kernel_size=1, stride=stride, bias=False, downsample=True,
-                               nbits_OA=nbits_OA, T=T, nbits_psum=nbits_psum, k=k),
-                nn.BatchNorm2d(planes * block.expansion),
-            )
+            downsample = downsample_sequential(self.inplanes, planes*block.expansion,
+                                    kernel_size=1, strid=stride, bias=False, downsample=True,
+                                    nbits_OA=nbits_OA, T=T, nbits_psum=nbits_psum, k=k)
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample,
