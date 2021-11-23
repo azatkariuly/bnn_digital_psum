@@ -70,10 +70,10 @@ class downsample_sequential(nn.Module):
     def __init__(self, inplanes, planes, kernel_size=1, stride=1, bias=False, downsample=True, nbits_OA=8, T=64, nbits_psum=8, k=2):
         super(downsample_sequential, self).__init__()
 
-        self.0 = BinarizeConv2d(inplanes, planes, kernel_size=kernel_size,
+        self.s0 = BinarizeConv2d(inplanes, planes, kernel_size=kernel_size,
                                 stride=stride, bias=bias, downsample=True, nbits_OA=nbits_OA,
                                 T=T, nbits_psum=nbits_psum, k=k)
-        self.1 = nn.BatchNorm2d(planes)
+        self.s1 = nn.BatchNorm2d(planes)
 
     def forward(self, x):
         x = self.0(x)
