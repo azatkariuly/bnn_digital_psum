@@ -57,9 +57,10 @@ class BasicBlock(nn.Module):
         if self.downsample is not None:
             if residual.data.max()>1:
                 import pdb; pdb.set_trace()
-            residual = self.downsample(residual)
+            residual, r = self.downsample(residual)
 
         out += residual
+        reg += r
         if self.do_bntan:
             out = self.bn2(out)
             out = self.tanh2(out)
@@ -67,19 +68,19 @@ class BasicBlock(nn.Module):
         return [out, reg]
 
 class downsample_sequential(nn.Module):
-    def __init__(self, inplanes, planes, kernel_size=1, stride=1, bias=False, downsample=True, nbits_OA=8, T=64, nbits_psum=8, k=2):
+    def __init__(self, inplanes, planes, kernel_size=1, stride=1, bias=False, nbits_OA=8, T=64, nbits_psum=8, k=2):
         super(downsample_sequential, self).__init__()
 
         self.s0 = BinarizeConv2d(inplanes, planes, kernel_size=kernel_size,
-                                stride=stride, bias=bias, downsample=True, nbits_OA=nbits_OA,
+                                stride=stride, bias=bias, nbits_OA=nbits_OA,
                                 T=T, nbits_psum=nbits_psum, k=k)
         self.s1 = nn.BatchNorm2d(planes)
 
     def forward(self, x):
-        x = self.s0(x)
-        x = self.s1(x)
+        x, r = self.s0(x[0])
+        x = self.s1(x[0])
 
-        return x
+        return x, r
 
 class ResNet(nn.Module):
 
@@ -91,7 +92,7 @@ class ResNet(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = downsample_sequential(self.inplanes, planes*block.expansion,
-                                    kernel_size=1, stride=stride, bias=False, downsample=True,
+                                    kernel_size=1, stride=stride, bias=False,
                                     nbits_OA=nbits_OA, T=T, nbits_psum=nbits_psum, k=k)
 
         layers = []

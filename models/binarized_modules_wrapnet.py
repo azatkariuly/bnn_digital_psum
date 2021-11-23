@@ -94,7 +94,7 @@ def quantizeLSQ_psum(v, s, p):
 class BinarizeConv2d(nn.Conv2d):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True, downsample=False, **kwargs):
+                 padding=0, dilation=1, groups=1, bias=True, **kwargs):
         super(BinarizeConv2d, self).__init__(in_channels, out_channels, kernel_size, stride=stride,
                                         padding=padding, dilation=dilation, groups=groups, bias=bias)
 
@@ -129,13 +129,11 @@ class BinarizeConv2d(nn.Conv2d):
             self.bias.org=self.bias.data.clone()
             out += self.bias.view(1, -1, 1, 1).expand_as(out)
 
-        #r = regularizer(out, b=self.nbits_OA)
+        r = regularizer(out, b=self.nbits_OA)
         #WrapNet cyclic activation
-        #out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
+        out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
 
-        if self.downsample:
-            return out
-        return out, 0 #r
+        return out, r
 
 def OA(x, b=4):
     mask = (1 << b) - 1
