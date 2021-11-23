@@ -405,6 +405,8 @@ def load_my_state_dict(self, state_dict):
                 param = param.data
             print('is =', name)
             #own_state[name].copy_(param)
+        for name in own_state:
+            print('baseline name:', name)
         '''
         for name in own_state:
             # if name not in state_dict:
