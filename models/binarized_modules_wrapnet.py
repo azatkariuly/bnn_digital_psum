@@ -125,6 +125,7 @@ class BinarizeConv2d(nn.Conv2d):
         out = OA(out, b=self.nbits_acc).float() + out - out.int()
 
         if not self.bias is None:
+            print("WHAT THE FUCK")
             self.bias.org=self.bias.data.clone()
             out += self.bias.view(1, -1, 1, 1).expand_as(out)
 
