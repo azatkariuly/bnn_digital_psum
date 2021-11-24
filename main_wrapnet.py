@@ -74,22 +74,18 @@ parser.add_argument('-e', '--evaluate', type=str, metavar='FILE',
                     help='evaluate model FILE on validation set')
 parser.add_argument('-prt', '--pretrained', type=str, metavar='FILE',
                     help='pretrained model FILE')
-parser.add_argument('-prt1', '--pretrained1', type=str, metavar='FILE',
-                    help='pretrained model FILE')
-parser.add_argument('-ab', '--abits', default=3, type=int,
-                    help='bitwidth for activations')
 parser.add_argument('-wb', '--wbits', default=1, type=int,
                     help='bitwidth for weights')
-parser.add_argument('-sa', '--SAbits', default=8, type=int,
-                    help='bitwidth for SA')
-parser.add_argument('-oa', '--OAbits', default=8, type=int,
-                    help='bitwidth for OA')
+parser.add_argument('-acc', '--acc_bits', default=8, type=int,
+                    help='bitwidth for accumulator')
 parser.add_argument('-t', '--t', default=64, type=int,
                     help='size of Tile (default: 64)')
 parser.add_argument('-psum', '--nbits_psum', default=8, type=int,
                     help='bitwidth for psums')
 parser.add_argument('-k', '--k', default=2, type=int,
                     help='WrapNet slope (default: 2)')
+parser.add_argument('-r', '--r', default=0.01, type=float,
+                    help='WrapNet regularizer coefficient (default: 0.01)')
 
 def main():
     global args, best_prec1
@@ -122,8 +118,8 @@ def main():
     logging.info("creating model %s", args.model)
     model = models.__dict__[args.model]
     model_config = {'input_size': args.input_size, 'dataset': args.dataset,
-                    'nbits': args.wbits, 'sab': args.SAbits, 'nbits_psum': args.nbits_psum,
-                    'T': args.t, 'nbits_OA': args.OAbits, 'k': args.k}
+                    'nbits': args.wbits, 'nbits_psum': args.nbits_psum,
+                    'T': args.t, 'nbits_acc': args.acc_bits, 'k': args.k}
 
     if args.model_config is not '':
         model_config = dict(model_config, **literal_eval(args.model_config))

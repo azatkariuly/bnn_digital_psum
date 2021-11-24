@@ -162,7 +162,7 @@ def resnet18_binary_wrapnet(**kwargs):
     num_classes = 10
     depth = 18
     return ResNet_cifar10(num_classes=num_classes, block=BasicBlock, depth=depth,
-                          T=kwargs['T'], nbits_OA=kwargs['nbits_OA'], nbits_psum=kwargs['nbits_psum'],
+                          T=kwargs['T'], nbits_acc=kwargs['nbits_acc'], nbits_psum=kwargs['nbits_psum'],
                           k=kwargs['k'])
 
 def resnet20_binary_wrapnet(**kwargs):
