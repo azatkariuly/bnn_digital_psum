@@ -98,7 +98,7 @@ class BinarizeConv2d(nn.Conv2d):
         super(BinarizeConv2d, self).__init__(in_channels, out_channels, kernel_size, stride=stride,
                                         padding=padding, dilation=dilation, groups=groups, bias=bias)
 
-        self.nbits_OA = kwargs['nbits_OA']
+        self.nbits_acc = kwargs['nbits_acc']
         self.T = kwargs['T']
         self.nbits_psum = kwargs['nbits_psum']    #psum bit size
         self.k = kwargs['k']
@@ -119,17 +119,17 @@ class BinarizeConv2d(nn.Conv2d):
         out = nn.functional.conv2d(input, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
 
         #out = satconv2D(input, self.weight, self.padding, self.stride,
-        #                T=self.T, b=self.nbits_OA, signed=True,
-        #                nbits_psum=self.nbits_OA, step_size_psum=self.step_size_psum)
+        #                T=self.T, b=self.nbits_acc, signed=True,
+        #                nbits_psum=self.nbits_acc, step_size_psum=self.step_size_psum)
 
         if not self.bias is None:
             self.bias.org=self.bias.data.clone()
             out += self.bias.view(1, -1, 1, 1).expand_as(out)
 
-        r = regularizer(out, b=self.nbits_OA)
+        r = regularizer(out, b=self.nbits_acc)
         #WrapNet cyclic activation
-        out = OA(out, b=self.nbits_OA).float() + out - out.int()
-        out = cyclic_activation(out, k=self.k, b=self.nbits_OA)
+        out = OA(out, b=self.nbits_acc).float() + out - out.int()
+        out = cyclic_activation(out, k=self.k, b=self.nbits_acc)
 
         return out, r
 
