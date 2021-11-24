@@ -307,7 +307,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
             # compute output
             output, reg = model(input_var)
 
-        loss = criterion(output, target_var) + 0.01*reg
+        loss = criterion(output, target_var) + args.r*reg
         if type(output) is list:
             output = output[0]
 
