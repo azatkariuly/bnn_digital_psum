@@ -122,19 +122,17 @@ class BinarizeConv2d(nn.Conv2d):
         #                T=self.T, b=self.nbits_acc, signed=True,
         #                nbits_psum=self.nbits_acc, step_size_psum=self.step_size_psum)
 
+        r = regularizer(out, b=self.nbits_acc)
+        out = OA(out, b=self.nbits_acc).float() + out - out.int()
 
+        #WrapNet cyclic activation
+        out = cyclic_activation(out, k=self.k, b=self.nbits_acc)
 
         if not self.bias is None:
-            print("WHAT THE FUCK")
             self.bias.org=self.bias.data.clone()
             out += self.bias.view(1, -1, 1, 1).expand_as(out)
 
-        r = regularizer(out, b=self.nbits_acc)
-        #WrapNet cyclic activation
-        out = OA(out, b=self.nbits_acc).float() + out - out.int()
-        #out = cyclic_activation(out, k=self.k, b=self.nbits_acc)
-
-        return out, 0
+        return out, r
 
 def OA_wrapnet(x, b=4):
     return (x+2**(b-1)).remainder(2**b) - 2**(b-1)
