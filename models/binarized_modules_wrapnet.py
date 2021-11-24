@@ -129,9 +129,9 @@ class BinarizeConv2d(nn.Conv2d):
         r = regularizer(out, b=self.nbits_acc)
         #WrapNet cyclic activation
         out = OA(out, b=self.nbits_acc).float() + out - out.int()
-        out = cyclic_activation(out, k=self.k, b=self.nbits_acc)
+        #out = cyclic_activation(out, k=self.k, b=self.nbits_acc)
 
-        return out, r
+        return out, 0
 
 def OA(x, b=4):
     return (x+2**(b-1)).remainder(2**b) - 2**(b-1)
