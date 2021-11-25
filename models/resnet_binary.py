@@ -5,7 +5,7 @@ from .binarized_modules import BinarizeConv2d
 
 __all__ = ['resnet18_binary', 'resnet20_binary']
 
-def Binaryconv3x3(in_planes, out_planes, stride=1, nbits_acc=8, T=64, k=2):
+def Binaryconv3x3(in_planes, out_planes, stride=1, nbits_acc=8, T=64, k=2, s=2):
     "3x3 convolution with padding"
     return BinarizeConv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                           padding=1, bias=False, nbits_acc=nbits_acc, T=T, k=k, s=s)
