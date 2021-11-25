@@ -37,11 +37,11 @@ parser.add_argument('--save', metavar='SAVE', default='garbage',
                     help='saved folder')
 parser.add_argument('--dataset', metavar='DATASET', default='cifar10',
                     help='dataset name or folder')
-parser.add_argument('--model', '-a', metavar='MODEL', default='resnet',
+parser.add_argument('--model', '-a', metavar='MODEL', default='resnet18_binary',
                     choices=model_names,
                     help='model architecture: ' +
                     ' | '.join(model_names) +
-                    ' (default: alexnet)')
+                    ' (default: resnet18_binary)')
 parser.add_argument('--input_size', type=int, default=None,
                     help='image input size')
 parser.add_argument('--model_config', default='',
