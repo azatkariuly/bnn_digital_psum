@@ -88,14 +88,15 @@ parser.add_argument('-s', '--s', default=2.0, type=float,
                     help='psum step size (default: 2.0)')
 
 def main():
+    global args, best_prec1
+    best_prec1 = 0
+    args = parser.parse_args()
+
     if args.sa:
         print('Shows true')
     else:
         print('Shows false')
     return
-    global args, best_prec1
-    best_prec1 = 0
-    args = parser.parse_args()
 
     if args.evaluate:
         args.results_dir = './results'
