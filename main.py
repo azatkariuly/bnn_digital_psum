@@ -76,6 +76,8 @@ parser.add_argument('-prt', '--pretrained', type=str, metavar='FILE',
                     help='pretrained model FILE')
 parser.add_argument('-wb', '--wbits', default=1, type=int,
                     help='bitwidth for weights')
+parser.add_argument('-sa', '--sa', dest='saturated adder', action='store_true',
+                    help='use saturated adder')
 parser.add_argument('-acc', '--acc_bits', default=8, type=int,
                     help='bitwidth for accumulator')
 parser.add_argument('-t', '--t', default=64, type=int,
@@ -86,6 +88,11 @@ parser.add_argument('-s', '--s', default=2.0, type=float,
                     help='psum step size (default: 2.0)')
 
 def main():
+    if args.sa:
+        print('Shows true')
+    else:
+        print('Shows false')
+    return
     global args, best_prec1
     best_prec1 = 0
     args = parser.parse_args()
