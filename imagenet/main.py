@@ -199,7 +199,7 @@ def train(epoch, train_loader, model, criterion, optimizer, scheduler, bar):
         end = time.time()
 
         # plot progress
-        bar.suffix  = '{phase} - Epoch: [{epoch}]({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:.4f} | top1: {top1: .4f} | top5: {top5: .4f} | ss: {ss: .4f}'.format(
+        bar.suffix  = '{phase} - Epoch: [{epoch}]({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:.4f} | top1: {top1: .4f} | top5: {top5: .4f}'.format(
                     phase='TRAINING',
                     epoch=epoch,
                     batch=i + 1,
