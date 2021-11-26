@@ -135,9 +135,9 @@ def main():
 
     # train the model
     epoch = start_epoch
-    bar = Bar('Processing', max=len(data_loader))
+    bar = Bar('Processing', max=len(train_loader))
     while epoch < args.epochs:
-        train_obj, train_top1_acc,  train_top5_acc = train(epoch,  train_loader, model, criterion_smooth, optimizer, scheduler)
+        train_obj, train_top1_acc,  train_top5_acc = train(epoch,  train_loader, model, criterion_smooth, optimizer, scheduler, bar)
         valid_obj, valid_top1_acc, valid_top5_acc = validate(epoch, val_loader, model, criterion, args)
 
         is_best = False
@@ -158,7 +158,7 @@ def main():
     print('total training time = {} hours'.format(training_time))
 
 
-def train(epoch, train_loader, model, criterion, optimizer, scheduler):
+def train(epoch, train_loader, model, criterion, optimizer, scheduler, bar):
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
