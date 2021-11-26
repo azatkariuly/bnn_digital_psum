@@ -151,7 +151,7 @@ def main():
             'optimizer' : optimizer.state_dict(),
             }, is_best, args.save)
 
-        print('Best Accuracy: ', best_top1_acc)
+        print('Best Accuracy: ', best_top1_acc.item())
 
         epoch += 1
 
@@ -268,7 +268,7 @@ def validate(epoch, val_loader, model, criterion, args):
             bar.next()
         bar.finish()
 
-        print(' * acc@1 {top1.avg:.3f} acc@5 {top5.avg:.3f}'
+        print(' * acc@1 {top1.avg:.3f} acc@5 {top5.avg:.3f}\n'
               .format(top1=top1, top5=top5))
 
     return losses.avg, top1.avg, top5.avg
