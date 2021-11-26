@@ -19,6 +19,10 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 from birealnet import birealnet18
 
+#progress bar
+sys.path.append(os.path.join(os.path.dirname(__file__), "progress"))
+from progress.bar import Bar as Bar
+
 
 parser = argparse.ArgumentParser("birealnet")
 parser.add_argument('--batch_size', type=int, default=512, help='batch size')
@@ -131,6 +135,7 @@ def main():
 
     # train the model
     epoch = start_epoch
+    bar = Bar('Processing', max=len(data_loader))
     while epoch < args.epochs:
         train_obj, train_top1_acc,  train_top5_acc = train(epoch,  train_loader, model, criterion_smooth, optimizer, scheduler)
         valid_obj, valid_top1_acc, valid_top5_acc = validate(epoch, val_loader, model, criterion, args)
@@ -159,11 +164,6 @@ def train(epoch, train_loader, model, criterion, optimizer, scheduler):
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
     top5 = AverageMeter('Acc@5', ':6.2f')
-
-    progress = ProgressMeter(
-        len(train_loader),
-        [batch_time, data_time, losses, top1, top5],
-        prefix="Epoch: [{}]".format(epoch))
 
     model.train()
     end = time.time()
@@ -198,7 +198,24 @@ def train(epoch, train_loader, model, criterion, optimizer, scheduler):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        progress.display(i)
+        # plot progress
+        bar.suffix  = '{phase} - Epoch: [{epoch}]({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:.4f} | top1: {top1: .4f} | top5: {top5: .4f} | ss: {ss: .4f}'.format(
+                    phase='TRAINING',
+                    epoch=epoch,
+                    batch=i + 1,
+                    size=len(train_loader),
+                    data=data_time.val,
+                    bt=batch_time.val,
+                    total=bar.elapsed_td,
+                    eta=bar.eta_td,
+                    loss=losses.avg,
+                    top1=top1.avg,
+                    top5=top5.avg,
+                    )
+        bar.next()
+    bar.finish()
+
+        #progress.display(i)
 
     return losses.avg, top1.avg, top5.avg
 
