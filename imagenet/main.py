@@ -151,6 +151,8 @@ def main():
             'optimizer' : optimizer.state_dict(),
             }, is_best, args.save)
 
+        print('Best Accuracy: ', best_top1_acc)
+
         epoch += 1
 
     training_time = (time.time() - start_t) / 36000
@@ -251,12 +253,11 @@ def validate(epoch, val_loader, model, criterion, args):
             end = time.time()
 
             # plot progress
-            bar.suffix  = '{phase} - Epoch: [{epoch}]({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:.4f} | top1: {top1: .4f} | top5: {top5: .4f}'.format(
+            bar.suffix  = '{phase} - Epoch: [{epoch}]({batch}/{size}) | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:.4f} | top1: {top1: .4f} | top5: {top5: .4f}'.format(
                         phase='TEST',
                         epoch=epoch,
                         batch=i + 1,
                         size=len(val_loader),
-                        data=data_time.val,
                         bt=batch_time.val,
                         total=bar.elapsed_td,
                         eta=bar.eta_td,
