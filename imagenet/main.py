@@ -136,7 +136,7 @@ def main():
     # train the model
     epoch = start_epoch
     while epoch < args.epochs:
-        #train_obj, train_top1_acc,  train_top5_acc = train(epoch,  train_loader, model, criterion_smooth, optimizer, scheduler)
+        train_obj, train_top1_acc,  train_top5_acc = train(epoch,  train_loader, model, criterion_smooth, optimizer, scheduler)
         valid_obj, valid_top1_acc, valid_top5_acc = validate(epoch, val_loader, model, criterion, args)
 
         is_best = False
@@ -151,7 +151,7 @@ def main():
             'optimizer' : optimizer.state_dict(),
             }, is_best, args.save)
 
-        print('Best Accuracy: ', best_top1_acc.item())
+        print('Best Accuracy: ', best_top1_acc.item(), '\n')
 
         epoch += 1
 
@@ -268,7 +268,7 @@ def validate(epoch, val_loader, model, criterion, args):
             bar.next()
         bar.finish()
 
-        print(' * acc@1 {top1.avg:.3f} acc@5 {top5.avg:.3f}\n'
+        print(' * acc@1 {top1.avg:.3f} acc@5 {top5.avg:.3f}'
               .format(top1=top1, top5=top5))
 
     return losses.avg, top1.avg, top5.avg
