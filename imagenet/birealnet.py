@@ -124,14 +124,14 @@ class HardBinaryConv(nn.Module):
     def forward(self, x):
         real_weights = self.weights.view(self.shape)
         scaling_factor = torch.mean(torch.mean(torch.mean(abs(real_weights),dim=3,keepdim=True),dim=2,keepdim=True),dim=1,keepdim=True)
-        #print(scaling_factor.shape, flush=True)
+        #print(scaling_factor, flush=True)
         scaling_factor = scaling_factor.detach()
         binary_weights_no_grad = torch.sign(real_weights)
         cliped_weights = torch.clamp(real_weights, -1.0, 1.0)
         binary_weights = binary_weights_no_grad.detach() - cliped_weights.detach() + cliped_weights
-        print(x, flush=True)
+        #print(binary_weights, flush=True)
         y = F.conv2d(x, binary_weights, stride=self.stride, padding=self.padding)
-        #print('output shape:', y.shape)
+        print(y.max(), y.min())
         #y = OA(y.int(), b=self.nbits_acc).float() + y - y.int()
 
         return y*scaling_factor.reshape(1, -1, 1, 1)
