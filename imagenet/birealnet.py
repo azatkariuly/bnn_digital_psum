@@ -124,7 +124,7 @@ class HardBinaryConv(nn.Module):
     def forward(self, x):
         real_weights = self.weights.view(self.shape)
         scaling_factor = torch.mean(torch.mean(torch.mean(abs(real_weights),dim=3,keepdim=True),dim=2,keepdim=True),dim=1,keepdim=True)
-        #print(scaling_factor, flush=True)
+        print(scaling_factor.shape, flush=True)
         scaling_factor = scaling_factor.detach()
         binary_weights_no_grad = scaling_factor * torch.sign(real_weights)
         cliped_weights = torch.clamp(real_weights, -1.0, 1.0)
