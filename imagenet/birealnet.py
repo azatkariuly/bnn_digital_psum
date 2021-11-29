@@ -132,6 +132,7 @@ class HardBinaryConv(nn.Module):
         #print(binary_weights, flush=True)
         y = F.conv2d(x, binary_weights, stride=self.stride, padding=self.padding)
 
+        print(y)
         y = OA(y.int(), b=self.nbits_acc).float() + y - y.int()
 
         return y
