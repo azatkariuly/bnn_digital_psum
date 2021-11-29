@@ -35,6 +35,8 @@ parser.add_argument('--data', metavar='DIR', default='/Dataset/ILSVRC2012/', hel
 parser.add_argument('--label_smooth', type=float, default=0.1, help='label smoothing')
 parser.add_argument('-j', '--workers', default=40, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
+parser.add_argument('-e', '--evaluate', type=str, metavar='FILE',
+                    help='evaluate model FILE on validation set')
 args = parser.parse_args()
 
 CLASSES = 1000
@@ -61,7 +63,6 @@ def main():
     # load model
     model = birealnet18()
     logging.info(model)
-    return
     model = nn.DataParallel(model).cuda()
 
     criterion = nn.CrossEntropyLoss()
@@ -86,18 +87,27 @@ def main():
     start_epoch = 0
     best_top1_acc= 0
 
-    checkpoint_tar = os.path.join(args.save, 'checkpoint.pth.tar')
-    if os.path.exists(checkpoint_tar):
-        logging.info('loading checkpoint {} ..........'.format(checkpoint_tar))
-        checkpoint = torch.load(checkpoint_tar)
-        start_epoch = checkpoint['epoch']
-        best_top1_acc = checkpoint['best_top1_acc']
+    # optionally resume from a checkpoint
+    if args.evaluate:
+        if not os.path.isfile(args.evaluate):
+            parser.error('invalid checkpoint: {}'.format(args.evaluate))
+        checkpoint = torch.load(args.evaluate)
         model.load_state_dict(checkpoint['state_dict'], strict=False)
-        logging.info("loaded checkpoint {} epoch = {}" .format(checkpoint_tar, checkpoint['epoch']))
+        logging.info("loaded checkpoint '%s' (epoch %s)",
+                     args.evaluate, checkpoint['epoch'])
+    else:
+        checkpoint_tar = os.path.join(args.save, 'checkpoint.pth.tar')
+        if os.path.exists(checkpoint_tar):
+            logging.info('loading checkpoint {} ..........'.format(checkpoint_tar))
+            checkpoint = torch.load(checkpoint_tar)
+            start_epoch = checkpoint['epoch']
+            best_top1_acc = checkpoint['best_top1_acc']
+            model.load_state_dict(checkpoint['state_dict'], strict=False)
+            logging.info("loaded checkpoint {} epoch = {}" .format(checkpoint_tar, checkpoint['epoch']))
 
-    # adjust the learning rate according to the checkpoint
-    for epoch in range(start_epoch):
-        scheduler.step()
+            # adjust the learning rate according to the checkpoint
+            for epoch in range(start_epoch):
+                scheduler.step()
 
     # load training data
     traindir = os.path.join(args.data, 'train')
@@ -133,6 +143,11 @@ def main():
         ])),
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
+
+    if args.evaluate:
+        valid_obj, valid_top1_acc, valid_top5_acc = validate(0, val_loader, model, criterion, args)
+        print('Best Accuracy:', valid_top1_acc)
+        return
 
     # train the model
     epoch = start_epoch
