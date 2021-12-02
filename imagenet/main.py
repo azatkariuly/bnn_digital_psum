@@ -42,6 +42,8 @@ parser.add_argument('-e', '--evaluate', type=str, metavar='FILE',
                     help='evaluate model FILE on validation set')
 parser.add_argument('-prt', '--pretrained', type=str, metavar='FILE',
                     help='pretrained model FILE')
+parser.add_argument('--resume', default='', type=str, metavar='PATH',
+                    help='path to latest checkpoint (default: none)')
 parser.add_argument('-acc', '--acc_bits', default=8, type=int,
                     help='bitwidth for accumulator')
 args = parser.parse_args()
@@ -111,28 +113,27 @@ def main():
         logging.info("loaded pretrained '%s' (epoch %s)",
                      args.pretrained, checkpoint['epoch'])
 
-    if args.evaluate:
+    elif args.evaluate:
         if not os.path.isfile(args.evaluate):
             parser.error('invalid checkpoint: {}'.format(args.evaluate))
         checkpoint = torch.load(args.evaluate)
         model.load_state_dict(checkpoint['state_dict'], strict=False)
         logging.info("loaded checkpoint '%s' (epoch %s)",
                      args.evaluate, checkpoint['epoch'])
-    '''
-    else:
-        checkpoint_tar = os.path.join(args.save, 'checkpoint.pth.tar')
-        if os.path.exists(checkpoint_tar):
-            logging.info('loading checkpoint {} ..........'.format(checkpoint_tar))
-            checkpoint = torch.load(checkpoint_tar)
-            start_epoch = checkpoint['epoch']
-            best_top1_acc = checkpoint['best_top1_acc']
-            model.load_state_dict(checkpoint['state_dict'], strict=False)
-            logging.info("loaded checkpoint {} epoch = {}" .format(checkpoint_tar, checkpoint['epoch']))
 
-            # adjust the learning rate according to the checkpoint
-            for epoch in range(start_epoch):
-                scheduler.step()
-    '''
+    elif args.resume:
+        checkpoint_tar = args.resume
+        if not os.path.isfile(checkpoint_tar):
+            parser.error('invalid resume checkpoint: {}'.format(checkpoint_tar))
+        checkpoint = torch.load(checkpoint_tar)
+        start_epoch = checkpoint['epoch']
+        best_top1_acc = checkpoint['best_top1_acc']
+        model.load_state_dict(checkpoint['state_dict'], strict=False)
+        logging.info("loading checkpoint '%s'", args.resume)
+
+        # adjust the learning rate according to the checkpoint
+        for epoch in range(start_epoch):
+            scheduler.step()
 
     # load training data
     traindir = os.path.join(args.data, 'train')

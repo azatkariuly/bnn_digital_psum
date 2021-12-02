@@ -44,12 +44,14 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
     satmm_cuda_psum = satmm_psum.apply
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
 
+    '''
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
         out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
         #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
         #out = cyclic_activation(out, k=2, b=b)
         return out*step_size_psum
+    '''
 
     out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
     #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
@@ -121,6 +123,8 @@ class HardBinaryConv(nn.Module):
 
         self.nbits_acc = nbits_acc
 
+        #self.step_size_psum = kwargs['s']
+
     def forward(self, x):
         real_weights = self.weights.view(self.shape)
         scaling_factor = torch.mean(torch.mean(torch.mean(abs(real_weights),dim=3,keepdim=True),dim=2,keepdim=True),dim=1,keepdim=True)
@@ -130,9 +134,12 @@ class HardBinaryConv(nn.Module):
         cliped_weights = torch.clamp(real_weights, -1.0, 1.0)
         binary_weights = binary_weights_no_grad.detach() - cliped_weights.detach() + cliped_weights
         #print(binary_weights, flush=True)
-        y = F.conv2d(x, binary_weights, stride=self.stride, padding=self.padding)
+        #y = F.conv2d(x, binary_weights, stride=self.stride, padding=self.padding)
 
-        y = OA(y.int(), b=self.nbits_acc).float() + y - y.int()
+        y = satconv2D(x, binary_weights, self.padding, self.stride,
+                      T=64, b=self.nbits_acc, signed=True, nbits_psum=self.nbits_acc)
+
+        #y = OA(y.int(), b=self.nbits_acc).float() + y - y.int()
 
         return y*scaling_factor.reshape(1, -1, 1, 1)
 
