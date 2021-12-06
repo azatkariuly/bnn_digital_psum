@@ -37,50 +37,14 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
 
     if step_size_psum is not None:
         psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
-        out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
-        #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
+        #out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
+        out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
         #out = cyclic_activation(out, k=2, b=b)
         return out*step_size_psum
 
     out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
     #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
     return out
-
-'''
-def satmm(A, X, b=8, signed=True):
-    width=2**b # 256
-    max = (width >> signed) - 1 #127 or 255
-    min = max - width + 1
-    N, M = A.shape[-2], A.shape[-1]
-    _, K = X.shape
-    return reduce(lambda x,y : (x+y).clip(min,max) ,torch.multiply(X.flatten(), A.reshape(-1,N,M,1).expand(-1,-1,-1,K).reshape(-1,N,M*K)).reshape(-1,N,M,K).transpose(-2,0)).transpose(0,-2).squeeze()
-
-def satmm(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
-    width=2**b # 256
-    max = (width >> signed) - 1 #127 or 255
-    min = max - width + 1
-    N, M = A.shape[-2], A.shape[-1]
-    _, K = X.shape
-
-    mult = torch.multiply(X.flatten(), A.reshape(-1,N,M,1).expand(-1,-1,-1,K).reshape(-1,N,M*K)).reshape(-1,N,M,K).transpose(-2,0)
-
-    rem = T - M%T
-    psum_num = (M+rem)//T
-
-    mult_reshaping = F.pad(input=mult, pad=(0, 0, 0, 0, 0, 0, 0, rem), mode='constant', value=0).reshape(T, psum_num, N, -1, K)
-
-    psum = torch.sum(mult_reshaping, axis=0)
-    out = torch.sum(psum, axis=0).transpose(0,-2).squeeze().transpose(1,2)
-    return out
-    # B N K T
-
-    if step_size_psum is not None:
-        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
-        return (OA(torch.sum(psum, axis=0), b=b)*s).transpose(0,-2).squeeze().transpose(1,2)
-
-    #return reduce(lambda x,y: (x+y).clip(min, max), psum).transpose(0,-2).squeeze().transpose(1,2)
-    return reduce(lambda x,y: OA((x+y), b=b), psum).transpose(0,-2).squeeze().transpose(1,2)
-'''
 
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
               nbits_psum=8, step_size_psum=None):
@@ -114,6 +78,16 @@ def Binarize(tensor,quant_mode='det'):
     else:
         return tensor.add_(1).div_(2).add_(torch.rand(tensor.size()).add(-0.5)).clamp_(0,1).round().mul_(2).add_(-1)
 
+class roundf(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, A):
+        return A.round()
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return grad_output
+
+'''
 def grad_scale(x, scale):
     yOut = x
     yGrad = x*scale
@@ -125,6 +99,7 @@ def round_pass(x):
     yGrad = x
     y = yOut.detach() - yGrad.detach() + yGrad
     return y
+'''
 
 def quantizeLSQ_psum(v, s, p):
     Qn = -2**(p-1)
@@ -132,6 +107,7 @@ def quantizeLSQ_psum(v, s, p):
 
     #gradScaleFactor = 1.0 / math.sqrt(v.numel()*Qp)
     #s = round_pass(grad_scale(s, gradScaleFactor))
+    round_pass = roundf.apply
 
     vbar = round_pass((v/s).clamp(Qn, Qp))
     #vhat = vbar * s

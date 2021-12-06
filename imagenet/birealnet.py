@@ -22,7 +22,16 @@ class satmm_psum(torch.autograd.Function):
         grad_weight = torch.matmul(A.transpose(1,2), grad_output)
         return grad_input, grad_weight, None
 
+class roundf(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, A):
+        return A.round()
 
+    @staticmethod
+    def backward(ctx, grad_output):
+        return grad_output
+
+'''
 def grad_scale(x, scale):
     yOut = x
     yGrad = x*scale
@@ -35,7 +44,7 @@ def round_pass(x):
     yGrad = x
     y = yOut.detach() - yGrad.detach() + yGrad
     return y
-
+'''
 
 def quantizeLSQ_psum(v, s, p):
     Qn = -2**(p-1)
@@ -43,6 +52,7 @@ def quantizeLSQ_psum(v, s, p):
 
     #gradScaleFactor = 1.0 / math.sqrt(v.numel()*Qp)
     #s = round_pass(grad_scale(s, gradScaleFactor))
+    round_pass = roundf.apply
 
     vbar = round_pass((v/s).clamp(Qn, Qp))
     #vhat = vbar * s
