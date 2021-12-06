@@ -211,7 +211,7 @@ class BiRealNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
-    def _make_layer(self, block, planes, blocks, stride=1, nbits_acc=32):
+    def _make_layer(self, block, planes, blocks, stride=1, nbits_acc=32, s=8):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
