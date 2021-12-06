@@ -25,7 +25,7 @@ from progress.bar import Bar as Bar
 
 
 parser = argparse.ArgumentParser("birealnet")
-parser.add_argument('--batch_size', type=int, default=512, help='batch size')
+parser.add_argument('--batch_size', type=int, default=256, help='batch size')
 parser.add_argument('--epochs', type=int, default=90, help='num of training epochs')
 parser.add_argument('--learning_rate', type=float, default=0.001, help='init learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
@@ -36,8 +36,8 @@ parser.add_argument('--results_dir', metavar='RESULTS_DIR', default='./results',
 parser.add_argument('--save', metavar='SAVE', default='garbage', help='saved folder')
 parser.add_argument('--data', metavar='DIR', default='/Dataset/ILSVRC2012/', help='path to dataset')
 parser.add_argument('--label_smooth', type=float, default=0.1, help='label smoothing')
-parser.add_argument('-j', '--workers', default=20, type=int, metavar='N',
-                    help='number of data loading workers (default: 20)')
+parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
+                    help='number of data loading workers (default: 8)')
 parser.add_argument('-e', '--evaluate', type=str, metavar='FILE',
                     help='evaluate model FILE on validation set')
 parser.add_argument('-prt', '--pretrained', type=str, metavar='FILE',
@@ -46,6 +46,8 @@ parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('-acc', '--acc_bits', default=8, type=int,
                     help='bitwidth for accumulator')
+parser.add_argument('-s', '--s', default=8.0, type=float,
+                    help='psum step size (default: 8.0)')
 args = parser.parse_args()
 
 CLASSES = 1000
@@ -76,7 +78,7 @@ def main():
     logging.info("args = %s", args)
 
     # load model
-    model = birealnet18(nbits_acc=args.acc_bits)
+    model = birealnet18(nbits_acc=args.acc_bits, 's': args.s)
     logging.info(model)
     model = nn.DataParallel(model).cuda()
 
