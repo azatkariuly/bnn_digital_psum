@@ -78,7 +78,7 @@ def main():
     logging.info("args = %s", args)
 
     # load model
-    model = birealnet18(nbits_acc=args.acc_bits, 's': args.s)
+    model = birealnet18(nbits_acc=args.acc_bits, s=args.s)
     logging.info(model)
     model = nn.DataParallel(model).cuda()
 
