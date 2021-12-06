@@ -73,6 +73,8 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
 def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=None):
     B,Cin,H,W=image.shape
     Cout,_,CH,CW = kernel.shape
+    print(padding)
+    print(stride)
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
