@@ -78,6 +78,7 @@ def Binarize(tensor,quant_mode='det'):
     else:
         return tensor.add_(1).div_(2).add_(torch.rand(tensor.size()).add(-0.5)).clamp_(0,1).round().mul_(2).add_(-1)
 
+'''
 class roundf(torch.autograd.Function):
     @staticmethod
     def forward(ctx, A):
@@ -99,7 +100,6 @@ def round_pass(x):
     yGrad = x
     y = yOut.detach() - yGrad.detach() + yGrad
     return y
-'''
 
 def quantizeLSQ_psum(v, s, p):
     Qn = -2**(p-1)
@@ -107,7 +107,7 @@ def quantizeLSQ_psum(v, s, p):
 
     #gradScaleFactor = 1.0 / math.sqrt(v.numel()*Qp)
     #s = round_pass(grad_scale(s, gradScaleFactor))
-    round_pass = roundf.apply
+    #round_pass = roundf.apply
 
     vbar = round_pass((v/s).clamp(Qn, Qp))
     #vhat = vbar * s
