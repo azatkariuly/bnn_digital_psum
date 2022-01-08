@@ -100,7 +100,8 @@ def main():
             {'params' : weight_parameters, 'weight_decay' : args.weight_decay}],
             lr=args.learning_rate,)
 
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step : (1.0-step/args.epochs), last_epoch=-1)
+    #scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step : (1.0-step/args.epochs), last_epoch=-1)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs, eta_min=0, last_epoch=-1)
     start_epoch = 0
     best_top1_acc= 0
 

@@ -40,7 +40,7 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
         #out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
         out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
         #out = cyclic_activation(out, k=2, b=b)
-        return out*step_size_psum
+        return out*s
 
     out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
     #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
@@ -78,17 +78,6 @@ def Binarize(tensor,quant_mode='det'):
     else:
         return tensor.add_(1).div_(2).add_(torch.rand(tensor.size()).add(-0.5)).clamp_(0,1).round().mul_(2).add_(-1)
 
-'''
-class roundf(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, A):
-        return A.round()
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        return grad_output
-
-'''
 def grad_scale(x, scale):
     yOut = x
     yGrad = x*scale
@@ -105,9 +94,8 @@ def quantizeLSQ_psum(v, s, p):
     Qn = -2**(p-1)
     Qp = 2**(p-1) - 1
 
-    #gradScaleFactor = 1.0 / math.sqrt(v.numel()*Qp)
-    #s = round_pass(grad_scale(s, gradScaleFactor))
-    #round_pass = roundf.apply
+    gradScaleFactor = 1.0 / math.sqrt(v.numel()*Qp)
+    s = grad_scale(s, gradScaleFactor)
 
     vbar = round_pass((v/s).clamp(Qn, Qp))
     #vhat = vbar * s
@@ -126,7 +114,7 @@ class BinarizeConv2d(nn.Conv2d):
         #self.k = kwargs['k']
 
         #psum step sizes
-        self.step_size_psum = kwargs['s'] #Parameter(torch.ones(1)*16.0)
+        self.step_size_psum = Parameter(torch.ones(1)*16.0)
 
         #buffer is not updated for optim.step
         self.register_buffer('init_state', torch.zeros(1))
