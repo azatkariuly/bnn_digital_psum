@@ -32,6 +32,11 @@ parser.add_argument('--batch_size', type=int, default=256, help='batch size')
 parser.add_argument('--epochs', type=int, default=90, help='num of training epochs')
 parser.add_argument('--learning_rate', type=float, default=0.001, help='init learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
+parser.add_argument('--model', '-a', metavar='MODEL', default='resnet18_binary',
+                    choices=model_names,
+                    help='model architecture: ' +
+                    ' | '.join(model_names) +
+                    ' (default: resnet18_binary)')
 parser.add_argument('--weight_decay', type=float, default=0, help='weight decay')
 parser.add_argument('--results_dir', metavar='RESULTS_DIR', default='./results',
                     help='results dir')
