@@ -18,7 +18,6 @@ import models
 from utils import *
 from torchvision import datasets, transforms
 from torch.autograd import Variable
-from birealnet import birealnet18
 
 #progress bar
 sys.path.append(os.path.join(os.path.dirname(__file__), "progress"))
