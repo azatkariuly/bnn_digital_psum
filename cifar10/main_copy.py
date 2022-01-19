@@ -47,10 +47,16 @@ parser.add_argument('-prt', '--pretrained', type=str, metavar='FILE',
                     help='pretrained model FILE')
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
+parser.add_argument('-wb', '--wbits', default=1, type=int,
+                    help='bitwidth for weights')
 parser.add_argument('-acc', '--acc_bits', default=8, type=int,
                     help='bitwidth for accumulator')
-parser.add_argument('-s', '--s', default=8.0, type=float,
-                    help='psum step size (default: 8.0)')
+parser.add_argument('-t', '--t', default=64, type=int,
+                    help='size of Tile (default: 64)')
+parser.add_argument('-k', '--k', default=2, type=int,
+                    help='WrapNet slope (default: 2)')
+parser.add_argument('-s', '--s', default=2.0, type=float,
+                    help='psum step size (default: 2.0)')
 args = parser.parse_args()
 
 CLASSES = 1000
