@@ -37,6 +37,8 @@ parser.add_argument('--model', '-a', metavar='MODEL', default='resnet18_binary',
                     help='model architecture: ' +
                     ' | '.join(model_names) +
                     ' (default: resnet18_binary)')
+parser.add_argument('--input_size', type=int, default=None,
+                    help='image input size')
 parser.add_argument('--weight_decay', type=float, default=0, help='weight decay')
 parser.add_argument('--results_dir', metavar='RESULTS_DIR', default='./results',
                     help='results dir')
