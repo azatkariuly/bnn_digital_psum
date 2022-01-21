@@ -40,8 +40,10 @@ parser.add_argument('--input_size', type=int, default=None,
                     help='image input size')
 parser.add_argument('--model_config', default='',
                     help='additional architecture configuration')
-parser.add_argument('--batch_size', type=int, default=256, help='batch size')
+parser.add_argument('-b', '--batch_size', type=int, default=256, help='batch size')
 parser.add_argument('--epochs', type=int, default=90, help='num of training epochs')
+parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
+                    help='manual epoch number (useful on restarts)')
 parser.add_argument('--lr', '--learning_rate', default=5e-3, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
