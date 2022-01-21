@@ -38,6 +38,8 @@ parser.add_argument('--model', '-a', metavar='MODEL', default='resnet18_binary',
                     ' (default: resnet18_binary)')
 parser.add_argument('--input_size', type=int, default=None,
                     help='image input size')
+parser.add_argument('--model_config', default='',
+                    help='additional architecture configuration')
 parser.add_argument('--batch_size', type=int, default=256, help='batch size')
 parser.add_argument('--epochs', type=int, default=90, help='num of training epochs')
 parser.add_argument('--lr', '--learning_rate', default=5e-3, type=float,
