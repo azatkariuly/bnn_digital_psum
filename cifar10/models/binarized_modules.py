@@ -12,6 +12,8 @@ from functools import reduce
 
 import numpy as np
 
+import pandas as pd
+
 class satmm_psum(torch.autograd.Function):
     @staticmethod
     def forward(ctx, A, X, t):
