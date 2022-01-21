@@ -123,10 +123,11 @@ def main():
     logging.info("created model with configuration: %s", model_config)
 
 ####################
-    criterion = nn.CrossEntropyLoss()
+    #criterion = nn.CrossEntropyLoss()
+    criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
     criterion = criterion.cuda()
-    criterion_smooth = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
-    criterion_smooth = criterion_smooth.cuda()
+    #criterion_smooth = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
+    #criterion_smooth = criterion_smooth.cuda()
 ####################
 
     all_parameters = model.parameters()
@@ -197,7 +198,7 @@ def main():
     # train the model
     epoch = start_epoch
     while epoch < args.epochs:
-        train_obj, train_top1_acc,  train_top5_acc = train(epoch,  train_loader, model, criterion_smooth, optimizer, scheduler)
+        train_obj, train_top1_acc,  train_top5_acc = train(epoch,  train_loader, model, criterion, optimizer, scheduler)
         valid_obj, valid_top1_acc, valid_top5_acc = validate(epoch, val_loader, model, criterion, args)
 
         is_best = False
