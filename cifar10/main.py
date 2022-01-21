@@ -343,7 +343,8 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
                     loss=losses.avg,
                     top1=top1.avg,
                     top5=top5.avg,
-                    ss=model.layer1[0].conv1.step_size_psum[0],
+                    ss=16.0,
+                    #ss=model.layer1[0].conv1.step_size_psum[0],
                     )
         bar.next()
 
