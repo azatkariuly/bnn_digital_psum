@@ -1,4 +1,5 @@
 import mm_cuda_goliath1 as satmm_cuda
+import satmm_cuda
 import torch
 import pdb
 import torch.nn as nn
