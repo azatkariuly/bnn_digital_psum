@@ -29,6 +29,8 @@ model_names = sorted(name for name in models.__dict__
 
 
 parser = argparse.ArgumentParser("PyTorch ConvNet Training")
+parser.add_argument('--dataset', metavar='DATASET', default='cifar10',
+                    help='dataset name or folder')
 parser.add_argument('--model', '-a', metavar='MODEL', default='resnet18_binary',
                     choices=model_names,
                     help='model architecture: ' +
@@ -87,7 +89,7 @@ def main():
 
     if args.evaluate:
         args.results_dir = './results'
-    if args.save is '':
+    if args.save == '':
         args.save = datetime.now().strftime('/garbage')
     save_path = os.path.join(args.results_dir, args.save)
     if not os.path.exists(save_path):
@@ -109,7 +111,7 @@ def main():
     model_config = {'input_size': args.input_size, 'dataset': args.dataset,
                     'nbits': args.wbits, 'T': args.t, 'nbits_acc': args.acc_bits,
                     'k': args.k, 's': args.s}
-    if args.model_config is not '':
+    if args.model_config != '':
         model_config = dict(model_config, **literal_eval(args.model_config))
 
     model = model(**model_config)
