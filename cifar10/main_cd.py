@@ -19,6 +19,7 @@ from utils import *
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 from data import get_dataset
+from preprocess import get_transform
 
 #progress bar
 sys.path.append(os.path.join(os.path.dirname(__file__), "progress"))
