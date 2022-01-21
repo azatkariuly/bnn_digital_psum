@@ -27,18 +27,13 @@ model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
                      and callable(models.__dict__[name]))
 
-parser = argparse.ArgumentParser("birealnet")
+
+parser = argparse.ArgumentParser("PyTorch ConvNet Training")
 parser.add_argument('--batch_size', type=int, default=256, help='batch size')
 parser.add_argument('--epochs', type=int, default=90, help='num of training epochs')
-parser.add_argument('--learning_rate', type=float, default=0.001, help='init learning rate')
+parser.add_argument('--lr', '--learning_rate', default=5e-3, type=float,
+                    metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
-parser.add_argument('--model', '-a', metavar='MODEL', default='resnet18_binary',
-                    choices=model_names,
-                    help='model architecture: ' +
-                    ' | '.join(model_names) +
-                    ' (default: resnet18_binary)')
-parser.add_argument('--input_size', type=int, default=None,
-                    help='image input size')
 parser.add_argument('--weight_decay', type=float, default=0, help='weight decay')
 parser.add_argument('--results_dir', metavar='RESULTS_DIR', default='./results',
                     help='results dir')
@@ -54,19 +49,13 @@ parser.add_argument('-prt', '--pretrained', type=str, metavar='FILE',
                     help='pretrained model FILE')
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
-parser.add_argument('-wb', '--wbits', default=1, type=int,
-                    help='bitwidth for weights')
 parser.add_argument('-acc', '--acc_bits', default=8, type=int,
                     help='bitwidth for accumulator')
-parser.add_argument('-t', '--t', default=64, type=int,
-                    help='size of Tile (default: 64)')
-parser.add_argument('-k', '--k', default=2, type=int,
-                    help='WrapNet slope (default: 2)')
-parser.add_argument('-s', '--s', default=2.0, type=float,
-                    help='psum step size (default: 2.0)')
+parser.add_argument('-s', '--s', default=8.0, type=float,
+                    help='psum step size (default: 8.0)')
 args = parser.parse_args()
 
-CLASSES = 1000
+CLASSES = 10
 
 if not os.path.exists('log'):
     os.mkdir('log')
@@ -95,9 +84,11 @@ def main():
     results_file = os.path.join(save_path, 'results.%s')
     results = ResultsLog(results_file % 'csv', results_file % 'html')
 
+    logging.info("saving to %s", save_path)
+    logging.debug("run arguments: %s", args)
+
     cudnn.benchmark = True
     cudnn.enabled=True
-    logging.info("args = %s", args)
 
     # create model
     logging.info("creating model %s", args.model)
@@ -105,21 +96,21 @@ def main():
     model_config = {'input_size': args.input_size, 'dataset': args.dataset,
                     'nbits': args.wbits, 'T': args.t, 'nbits_acc': args.acc_bits,
                     'k': args.k, 's': args.s}
-
     if args.model_config is not '':
         model_config = dict(model_config, **literal_eval(args.model_config))
 
     model = model(**model_config)
 
     # load model
-    #model = birealnet18(nbits_acc=args.acc_bits, s=args.s)
-    logging.info(model)
     model = nn.DataParallel(model).cuda()
+    logging.info("created model with configuration: %s", model_config)
 
+####################
     criterion = nn.CrossEntropyLoss()
     criterion = criterion.cuda()
     criterion_smooth = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
     criterion_smooth = criterion_smooth.cuda()
+####################
 
     all_parameters = model.parameters()
     weight_parameters = []
@@ -129,13 +120,10 @@ def main():
     weight_parameters_id = list(map(id, weight_parameters))
     other_parameters = list(filter(lambda p: id(p) not in weight_parameters_id, all_parameters))
 
-    optimizer = torch.optim.Adam(
-            [{'params' : other_parameters},
-            {'params' : weight_parameters, 'weight_decay' : args.weight_decay}],
-            lr=args.learning_rate,)
 
-    #scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step : (1.0-step/args.epochs), last_epoch=-1)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs, eta_min=0, last_epoch=-1)
+    optimizer = torch.optim.Adam(model.parameters(), betas=(0.9, 0.999), lr=args.lr)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs, eta_min=0, last_epoch=args.start_epoch-1)
+
     start_epoch = 0
     best_top1_acc= 0
 
@@ -172,39 +160,16 @@ def main():
         for epoch in range(start_epoch):
             scheduler.step()
 
-    # load training data
-    traindir = os.path.join(args.data, 'train')
-    valdir = os.path.join(args.data, 'val')
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-
-    # data augmentation
-    crop_scale = 0.08
-    lighting_param = 0.1
-    train_transforms = transforms.Compose([
-        transforms.RandomResizedCrop(224, scale=(crop_scale, 1.0)),
-        Lighting(lighting_param),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        normalize])
-
-    train_dataset = datasets.ImageFolder(
-        traindir,
-        transform=train_transforms)
-
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.batch_size, shuffle=True,
+    val_data = get_dataset(args.dataset, 'val', transform['eval'])
+    val_loader = torch.utils.data.DataLoader(
+        val_data,
+        batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
 
-    # load validation data
-    val_loader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(valdir, transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            normalize,
-        ])),
-        batch_size=args.batch_size, shuffle=False,
+    train_data = get_dataset(args.dataset, 'train', transform['train'])
+    train_loader = torch.utils.data.DataLoader(
+        train_data,
+        batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True)
 
     if args.evaluate:
