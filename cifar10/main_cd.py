@@ -181,6 +181,15 @@ def main():
         for epoch in range(start_epoch):
             scheduler.step()
 
+    # Data loading code
+    default_transform = {
+        'train': get_transform(args.dataset,
+                               input_size=args.input_size, augment=True),
+        'eval': get_transform(args.dataset,
+                              input_size=args.input_size, augment=False)
+    }
+    transform = getattr(model, 'input_transform', default_transform)
+
     val_data = get_dataset(args.dataset, 'val', transform['eval'])
     val_loader = torch.utils.data.DataLoader(
         val_data,
