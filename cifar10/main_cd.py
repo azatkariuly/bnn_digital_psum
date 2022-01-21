@@ -235,11 +235,11 @@ def main():
 
 
 def train(epoch, train_loader, model, criterion, optimizer, scheduler):
-    batch_time = AverageMeter('Time', ':6.3f')
-    data_time = AverageMeter('Data', ':6.3f')
-    losses = AverageMeter('Loss', ':.4e')
-    top1 = AverageMeter('Acc@1', ':6.2f')
-    top5 = AverageMeter('Acc@5', ':6.2f')
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    losses = AverageMeter()
+    top1 = AverageMeter()
+    top5 = AverageMeter()
 
     model.train()
     end = time.time()
@@ -297,10 +297,10 @@ def train(epoch, train_loader, model, criterion, optimizer, scheduler):
     return losses.avg, top1.avg, top5.avg
 
 def validate(epoch, val_loader, model, criterion, args):
-    batch_time = AverageMeter('Time', ':6.3f')
-    losses = AverageMeter('Loss', ':.4e')
-    top1 = AverageMeter('Acc@1', ':6.2f')
-    top5 = AverageMeter('Acc@5', ':6.2f')
+    batch_time = AverageMeter()
+    losses = AverageMeter()
+    top1 = AverageMeter()
+    top5 = AverageMeter()
 
     # switch to evaluation mode
     model.eval()
