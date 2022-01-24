@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 import torch.nn.functional as F
+from functools import reduce
 
 __all__ = ['birealnet18', 'birealnet34']
 
