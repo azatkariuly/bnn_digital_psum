@@ -22,17 +22,7 @@ class satmm_psum(torch.autograd.Function):
         grad_weight = torch.matmul(A.transpose(1,2), grad_output)
         return grad_input, grad_weight, None
 
-'''
-class roundf(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, A):
-        return A.round()
 
-    @staticmethod
-    def backward(ctx, grad_output):
-        return grad_output
-
-'''
 def grad_scale(x, scale):
     yOut = x
     yGrad = x*scale
@@ -53,7 +43,6 @@ def quantizeLSQ_psum(v, s, p):
 
     #gradScaleFactor = 1.0 / math.sqrt(v.numel()*Qp)
     #s = round_pass(grad_scale(s, gradScaleFactor))
-    round_pass = roundf.apply
 
     vbar = round_pass((v/s).clamp(Qn, Qp))
     #vhat = vbar * s
@@ -70,9 +59,9 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
     psum = satmm_cuda_psum(A.contiguous(),X.contiguous(), T)
 
     if step_size_psum is not None:
-        psum, s = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
-        #out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
-        out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
+        psum, _ = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
+        out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
+        #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
         #out = cyclic_activation(out, k=2, b=b)
         return out*step_size_psum
 
