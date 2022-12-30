@@ -13,7 +13,7 @@ def Binaryconv3x3(in_planes, out_planes, stride=1, nbits_acc=8, T=64, k=2, s=2):
     d = opt_psums[str(nbits_acc)]
     p_bits = nbits_acc - d[str(9*in_planes)]
 
-    print('optimal_psum:', nbtis_acc, d[str(9*in_planes)], 2**p_bits)
+    print('optimal_psum:', nbits_acc, d[str(9*in_planes)], 2**p_bits)
 
     return BinarizeConv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                           padding=1, bias=False, nbits_acc=nbits_acc, T=T, k=k, s=2**p_bits)
