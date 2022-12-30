@@ -2,13 +2,19 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 import math
 from .binarized_modules import BinarizeConv2d
+import json
 
 __all__ = ['resnet18_binary', 'resnet20_binary']
 
+opt_psums = json.load(open('./optimal_psums.json', 'r'))
+
 def Binaryconv3x3(in_planes, out_planes, stride=1, nbits_acc=8, T=64, k=2, s=2):
     "3x3 convolution with padding"
+    d = opt_psums[str(nbits_acc)]
+    p_bits = nbits_acc - d[str(9*in_planes)]
+
     return BinarizeConv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                          padding=1, bias=False, nbits_acc=nbits_acc, T=T, k=k, s=s)
+                          padding=1, bias=False, nbits_acc=nbits_acc, T=T, k=k, s=2**p_bits)
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
