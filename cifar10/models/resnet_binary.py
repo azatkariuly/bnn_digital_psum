@@ -6,7 +6,7 @@ import json
 
 __all__ = ['resnet18_binary', 'resnet20_binary']
 
-opt_psums = json.load(open('./optimal_psums.json', 'r'))
+opt_psums = json.load(open('optimal_psums.json', 'r'))
 
 def Binaryconv3x3(in_planes, out_planes, stride=1, nbits_acc=8, T=64, k=2, s=2):
     "3x3 convolution with padding"
