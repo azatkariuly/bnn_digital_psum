@@ -16,17 +16,15 @@ def Binaryconv3x3(in_planes, out_planes, stride=1, nbits_acc=8, T=64, k=2, s=2):
     #
     # print('optimal_psum:', nbits_acc, 9*in_planes, d[str(9*in_planes)], 2**p_bits)
 
-    if 9*in_planes == 720:
-        p_bits = 1
-    elif 9*in_planes == 1440:
-        p_bits = 1
+    if 9*in_planes > 3200:
+        p_bits = 5
     else:
-        p_bits = 1
+        p_bits = 4
 
-    print('optimal_psum:', nbits_acc, 9*in_planes, 2**p_bits)
+    print('optimal_psum:', nbits_acc, 9*in_planes, 2**(nbits_acc - p_bits))
 
     return BinarizeConv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                          padding=1, bias=False, nbits_acc=nbits_acc, T=T, k=k, s=2**p_bits)
+                          padding=1, bias=False, nbits_acc=nbits_acc, T=T, k=k, s=2**(nbits_acc - p_bits))
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
