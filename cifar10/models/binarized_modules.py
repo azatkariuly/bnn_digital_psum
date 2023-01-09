@@ -47,8 +47,8 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
 
         if shift_value < 1:
             shift_value = 1
-        elif shift_value > 5:
-            shift_value = 5
+        elif shift_value > 4:
+            shift_value = 4
 
         psum, _ = quantizeLSQ_psum(psum, 2**shift_value, nbits_psum)
 
