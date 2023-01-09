@@ -39,11 +39,19 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
     if step_size_psum is not None:
         # print('doing quantization..')
 
-        psum, _ = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
+        psum = psum/2
 
-        out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
-        # out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
-        return out*step_size_psum
+        N = psum.shape[3]
+
+        shift_value = int(math.log2(T/4 * N + 1) + 1) - b
+
+        print(shift_value)
+
+        psum, _ = quantizeLSQ_psum(psum, shift_value, nbits_psum)
+
+        # out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
+        out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
+        return out*shift_value*2
 
     out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
     #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)

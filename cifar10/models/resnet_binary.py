@@ -11,18 +11,26 @@ opt_psums = json.load(open('./optimal_psums.json', 'r'))
 def Binaryconv3x3(in_planes, out_planes, stride=1, nbits_acc=8, T=64, k=2, s=2):
     "3x3 convolution with padding"
 
-    d = opt_psums[str(nbits_acc)]
-    p_bits = d[str(9*in_planes)]
+    # d = opt_psums[str(nbits_acc)]
+    # p_bits = d[str(9*in_planes)]
 
     # if 9*in_planes < 2560:
     #     p_bits = 3
     # else:
     #     p_bits = 2
 
-    print('optimal_psum:', nbits_acc, 9*in_planes, 2**(nbits_acc - p_bits))
+    # MY ALGORITHM
+
+    # derive b
+
+    # notate a
+
+    # calculate b-a shift value
+
+    # print('optimal_psum:', nbits_acc, 9*in_planes, 2**(nbits_acc - p_bits))
 
     return BinarizeConv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                          padding=1, bias=False, nbits_acc=nbits_acc, T=T, k=k, s=2**(nbits_acc - p_bits))
+                          padding=1, bias=False, nbits_acc=nbits_acc, T=T, k=k, s=s)
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
