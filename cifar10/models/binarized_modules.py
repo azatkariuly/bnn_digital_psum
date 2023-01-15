@@ -51,7 +51,7 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
         # elif shift_value > 4:
         #     shift_value = 4
 
-        print(psum)
+        torch.save(psum, 'psum.pt')
 
         psum, _ = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
 
