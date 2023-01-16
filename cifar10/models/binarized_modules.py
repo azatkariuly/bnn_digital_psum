@@ -51,7 +51,7 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
         # elif shift_value > 4:
         #     shift_value = 4
 
-        if psum.shape[3] == 12:
+        if psum.shape[3] != 12 and psum.shape[3] != 23:
             torch.save(psum.cpu().detach(), 'psum.pt')
             print(psum.shape)
             return
