@@ -42,7 +42,7 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
         # # ALGORITHM
 
         # psum = psum/2
-        # N = psum.shape[3]
+        N = psum.shape[3]
         #
         # shift_value = int(math.log2(T/4 * N + 1) + 1) - b
         #
@@ -51,17 +51,34 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
         # elif shift_value > 4:
         #     shift_value = 4
 
-        if psum.shape[3] != 12 and psum.shape[3] != 23 and psum.shape[3] != 2:
-            torch.save(psum.cpu().detach(), 'psum.pt')
-            print(psum.shape)
-            return
+        # if psum.shape[3] != 12 and psum.shape[3] != 23 and psum.shape[3] != 2:
+        #     torch.save(psum.cpu().detach(), 'psum.pt')
+        #     print(psum.shape)
+        #     return
 
-        psum, _ = quantizeLSQ_psum(psum, step_size_psum, nbits_psum)
+        shift_value = 4
+        if b == 7:
+            if N >= 35:
+                shift_value = 4
+            else:
+                shift_value = 3
+        if b == 6:
+            if N >= 34:
+                shift_value = 3
+            else:
+                shift_value = 2
+        if b == 5:
+            if N >= 25:
+                shift_value = 3
+            else:
+                shift_value = 2
+
+        psum, _ = quantizeLSQ_psum(psum, 2**shift_value, nbits_psum)
 
         # out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
         out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
 
-        return out*step_size_psum
+        return out*(2**shift_value)
 
     out = reduce(lambda x,y: (x+y).clip(min, max), psum.transpose(0,3)).squeeze().transpose(0,-1)
     #out = OA(torch.sum(psum, axis=3).squeeze().transpose(1,-1), b=b)
@@ -78,8 +95,7 @@ def satconv2D(image, kernel, padding=0, stride=1, T=64, b=8, signed=True,
     OH = (H - CH + 2 * padding[0]) // stride[0] + 1
     OW = (W - CW + 2 * padding[1]) // stride[0] + 1
     inp_unf = torch.nn.functional.unfold(image, (CH, CW),padding=padding,stride=stride)
-    return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed,
-                           nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
+    return satmm_cuda_temp(inp_unf.transpose(1, 2),kernel.view(Cout, -1).t(), T=T, b=b, signed=signed, nbits_psum=nbits_psum, step_size_psum=step_size_psum).reshape(B,Cout,OH,OW)
 
 def get_psum(image, kernel, padding=0, stride=1, T=64):
     B,Cin,H,W=image.shape
