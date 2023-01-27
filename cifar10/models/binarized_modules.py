@@ -63,7 +63,7 @@ def satmm_cuda_temp(A, X, T=64, b=8, signed=True, nbits_psum=8, step_size_psum=N
             else:
                 shift_value = 2
         if b == 6:
-            if N >= 48:
+            if N >= 34:
                 shift_value = 4
             else:
                 shift_value = 3
